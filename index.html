@@ -30,6 +30,26 @@ input,select{font-family:inherit;font-size:16px}
 .plan-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:var(--r-full)}
 .plan-free{color:var(--s600);background:var(--s100);border:1px solid var(--line)}
 .plan-pro{color:var(--gold);background:var(--gold-soft);border:1px solid rgba(201,169,104,.4)}
+.plan-master{color:#06080F;background:var(--grad-gold);border:1px solid transparent;font-weight:800;letter-spacing:.06em}
+
+/* Faixa de pagamento pendente (carência) — padrão Vizio Finance */
+.vm-banner{position:sticky;top:58px;z-index:29;display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:10px 18px;font-size:13px;font-weight:600;color:#F5D89A;
+  background:rgba(201,169,104,.12);border-bottom:1px solid rgba(201,169,104,.35)}
+@media(max-width:640px){.vm-banner{flex-direction:column;gap:8px;text-align:center}}
+
+/* Tela de acesso */
+.vm-tabs{display:flex;gap:6px;background:var(--coal);border:1px solid var(--line);border-radius:12px;padding:4px;margin:14px 0}
+.vm-tab{flex:1;border:none;background:transparent;color:var(--s500);font-family:inherit;font-weight:700;font-size:13px;
+  padding:10px;border-radius:9px;cursor:pointer}
+.vm-tab.on{background:var(--grad-brand);color:#fff}
+.vm-field{text-align:left;margin-bottom:11px}
+.vm-field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--s500);margin-bottom:5px}
+.vm-field input{width:100%;padding:13px 14px;border:1px solid var(--line2);border-radius:10px;
+  background:var(--coal);color:var(--ink);font-size:16px}
+.vm-field input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(28,100,240,.18)}
+.vm-err{display:none;background:var(--neg-bg);border:1px solid rgba(240,97,109,.4);color:#F0616D;
+  border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px;text-align:left}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--s600);font-size:16px;display:flex;align-items:center;justify-content:center}
 
 .wrap{max-width:1080px;margin:0 auto;padding:18px 18px 120px}
