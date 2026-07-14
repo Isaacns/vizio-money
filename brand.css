@@ -1,0 +1,45 @@
+/* ==========================================================================
+   VIZIO MONEY — brand.css  (IDENTIDADE ISOLADA / TROCÁVEL)
+   Para reskin: altere APENAS este arquivo + brand/logo.svg.
+   Cores derivadas do azul oficial VIZIO (#1C64F0) + verde prosperidade.
+   Logo abaixo é PROVISÓRIA (o usuário fornecerá a identidade final).
+   ========================================================================== */
+:root{
+  /* Marca */
+  --brand:#1C64F0; --brand-2:#3C94FC; --brand-deep:#1450C8; --brand-soft:#EAF1FE;
+  --grow:#10B981; --grow-2:#34D399; --grow-soft:#E7F8F1;
+  --amber:#F59E0B; --amber-soft:#FEF3E2;
+  --grad-brand:linear-gradient(120deg,#1C64F0 0%,#10B981 100%);
+
+  /* Base clara */
+  --ink:#0E1726; --s700:#1F2B40; --s600:#3A475C; --s500:#5B6781; --s400:#8A94A6;
+  --s300:#C4CCD8; --s200:#E4E9F0; --s100:#F1F4F9;
+  --bg:#F4F7FB; --surface:#FFFFFF; --line:rgba(14,23,38,.09); --line2:rgba(14,23,38,.14);
+
+  /* Semáforo financeiro */
+  --pos:#10B981; --pos-bg:#E7F8F1;
+  --warn:#F59E0B; --warn-bg:#FEF3E2;
+  --neg:#E11D48; --neg-bg:#FDE7EC;
+
+  /* Fases da lua do orçamento (motivo-assinatura) */
+  --moon-0:#C4CCD8; --moon-1:#34D399; --moon-2:#10B981; --moon-3:#F59E0B; --moon-4:#E11D48;
+
+  /* Tipografia */
+  --font:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-display:'Plus Jakarta Sans','Inter',sans-serif;
+
+  /* Raio & sombra */
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-full:999px;
+  --sh-sm:0 1px 2px rgba(14,23,38,.05);
+  --sh-md:0 4px 16px rgba(14,23,38,.07);
+  --sh-lg:0 14px 40px rgba(14,23,38,.12);
+}
+
+/* Wordmark provisória — trocável. Sem ícone “fofo”, mais sóbria. */
+.brand-lockup{display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);
+  display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{display:block}
+.brand-word{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--ink);line-height:1}
+.brand-word b{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.brand-badge{font-family:var(--font);font-size:10px;font-weight:600;color:var(--s500)}
