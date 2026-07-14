@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=0.4">
+<link rel="stylesheet" href="brand.css?v=0.5">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* A luz da página vem do MODO AURA v3 (aura.js) — não de gradientes locais. */
@@ -48,6 +48,15 @@ input,select{font-family:inherit;font-size:16px}
 .vm-field input{width:100%;padding:13px 14px;border:1px solid var(--line2);border-radius:10px;
   background:var(--coal);color:var(--ink);font-size:16px}
 .vm-field input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(28,100,240,.18)}
+/* Exibir senha: no celular, digitar às cegas é a principal fonte de erro. */
+.vm-pw{position:relative}
+.vm-pw input{padding-right:48px}
+.vm-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:40px;height:40px;display:grid;place-items:center;border:none;background:transparent;
+  color:var(--s500);cursor:pointer;border-radius:8px}
+.vm-eye:hover{color:var(--brand-2)}
+.vm-eye:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+@media (pointer:coarse),(max-width:820px){ .vm-eye{width:44px;height:44px} .vm-pw input{padding-right:52px} }
 .vm-err{display:none;background:var(--neg-bg);border:1px solid rgba(240,97,109,.4);color:#F0616D;
   border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px;text-align:left}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--s600);font-size:16px;display:flex;align-items:center;justify-content:center}
@@ -862,6 +871,6 @@ render();
 
 <!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="auth.js?v=0.4"></script>
+<script src="auth.js?v=0.5"></script>
 </body>
 </html>

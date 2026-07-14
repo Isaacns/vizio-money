@@ -69,6 +69,44 @@ const vmSubscribeUrl = () => VM.user
   ? `${VM_STRIPE_LINK}?client_reference_id=${VM.user.id}&prefilled_email=${encodeURIComponent(VM.user.email||'')}`
   : VM_STRIPE_LINK;
 
+/* ================= campo de senha com "exibir" =================
+   Um só lugar define o campo de senha do produto inteiro — assim o botão de
+   olho não sai do lugar (nem some) quando alguém mexer numa tela só. */
+function vmCampoSenha(id, label, autocomplete, placeholder){
+  return `<div class="vm-field">
+    <label for="${id}">${label}</label>
+    <div class="vm-pw">
+      <input id="${id}" type="password" autocomplete="${autocomplete}"
+             placeholder="${placeholder||''}" required>
+      <button type="button" class="vm-eye" data-pw="${id}"
+              aria-label="Exibir senha" aria-pressed="false" title="Exibir senha">
+        ${vmIconOlho(false)}
+      </button>
+    </div></div>`;
+}
+function vmIconOlho(aberto){
+  return aberto
+    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/><path d="M9.4 5.2A9.5 9.5 0 0 1 12 5c5 0 9 4.5 9 7a12 12 0 0 1-2.4 3.3M6.2 6.7C3.9 8.2 3 10.6 3 12c0 2.5 4 7 9 7 1.3 0 2.5-.3 3.6-.8"/></svg>`
+    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+/* Liga todos os olhos da tela atual. Chamado depois de cada innerHTML. */
+function vmLigarOlhos(raiz){
+  raiz.querySelectorAll('.vm-eye').forEach(b=>{
+    b.onclick = ()=>{
+      const inp = document.getElementById(b.dataset.pw);
+      if(!inp) return;
+      const mostrar = inp.type === 'password';
+      inp.type = mostrar ? 'text' : 'password';
+      b.innerHTML = vmIconOlho(mostrar);
+      b.setAttribute('aria-pressed', String(mostrar));
+      const t = mostrar ? 'Ocultar senha' : 'Exibir senha';
+      b.setAttribute('aria-label', t); b.title = t;
+      /* devolve o cursor ao fim do texto: trocar o type joga o cursor pro início */
+      const p = inp.value.length; inp.focus(); try{ inp.setSelectionRange(p,p); }catch(e){}
+    };
+  });
+}
+
 /* ================= chrome (topbar + faixa) ================= */
 function vmChrome(){
   const chip = document.getElementById('planChip');
@@ -119,9 +157,9 @@ function vmAccount(){
     <div class="vm-field"><label for="vm-email">E-mail</label>
       <input id="vm-email" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com" required></div>
 
-    <div class="vm-field"><label for="vm-pass">Senha</label>
-      <input id="vm-pass" type="password" autocomplete="${vmTab==='criar'?'new-password':'current-password'}"
-             placeholder="${vmTab==='criar'?'mínimo 8 caracteres':'sua senha'}" required></div>
+    ${vmCampoSenha('vm-pass','Senha',
+        vmTab==='criar' ? 'new-password' : 'current-password',
+        vmTab==='criar' ? 'mínimo 8 caracteres' : 'sua senha')}
 
     <button class="btn" type="submit" id="vm-go" style="width:100%;margin-top:4px">
       ${vmTab==='criar' ? 'Criar minha conta' : 'Entrar'}</button>
@@ -134,6 +172,7 @@ function vmAccount(){
   const err = m => { const e=document.getElementById('vm-err'); e.textContent=m; e.style.display=m?'block':'none'; };
   r.querySelectorAll('.vm-tab').forEach(b=>b.onclick=()=>{ vmTab=b.dataset.t; vmAccount(); });
   document.getElementById('vm-close').onclick=()=> r.innerHTML='';
+  vmLigarOlhos(r);
 
   const forgot=document.getElementById('vm-forgot');
   if(forgot) forgot.onclick=async()=>{
@@ -239,15 +278,14 @@ function vmDefinirSenha(primeira){
     <p>${primeira ? 'Sua conta ainda não tem senha. Defina uma para entrar pelo computador também.'
                   : 'Escolha uma senha nova para a sua conta.'}</p>
     <div class="vm-err" id="vm-perr"></div>
-    <div class="vm-field"><label for="vm-p1">Nova senha</label>
-      <input id="vm-p1" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" required></div>
-    <div class="vm-field"><label for="vm-p2">Repita a senha</label>
-      <input id="vm-p2" type="password" autocomplete="new-password" required></div>
+    ${vmCampoSenha('vm-p1','Nova senha','new-password','mínimo 8 caracteres')}
+    ${vmCampoSenha('vm-p2','Repita a senha','new-password','')}
     <button class="btn" type="submit" id="vm-psave" style="width:100%">Salvar senha</button>
     <button type="button" class="linklike" id="vm-pskip">Agora não</button>
   </form></div>`;
 
   const err = m => { const e=document.getElementById('vm-perr'); e.textContent=m; e.style.display=m?'block':'none'; };
+  vmLigarOlhos(r);
   document.getElementById('vm-pskip').onclick=()=>{ r.innerHTML=''; vmLimparHash(); };
   document.getElementById('vm-pf').onsubmit = async (ev)=>{
     ev.preventDefault(); err('');
