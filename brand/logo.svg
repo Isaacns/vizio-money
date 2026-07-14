@@ -1,4 +1,8 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VIZIO Money">
-  <!-- Símbolo M — VIZIO Money (ouro discreto), fiel ao Brand OS do cliente -->
-  <path d="M6 25 V7 L16 20 L26 7 V25" fill="none" stroke="#C9A968" stroke-width="2.3" stroke-linecap="square" stroke-linejoin="miter"/>
+<svg width="32" height="32" viewBox="-40 -30 715 642" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VIZIO Money">
+  <!-- Símbolo M — VIZIO Money. Geometria fiel ao render oficial:
+       hastes verticais, ápices em ponta (miter), V central assimétrico
+       (vértice deslocado à direita) e parando acima da base. -->
+  <path d="M42 582 V44 L380 372 L592 44 V582"
+        stroke="#C9A968" stroke-width="85"
+        stroke-linejoin="miter" stroke-linecap="butt" stroke-miterlimit="12"/>
 </svg>

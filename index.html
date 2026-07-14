@@ -92,6 +92,17 @@ tr:last-child td{border-bottom:none}
 .bar{height:6px;border-radius:4px;background:var(--s100);overflow:hidden;margin-top:5px}
 .bar > i{display:block;height:100%;border-radius:4px}
 
+/* IA de Reflexão */
+.card.reflex{border-color:rgba(201,169,104,.32)}
+.card.reflex h3 span:first-child{color:var(--gold)}
+.rfx-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.rfx-grid{grid-template-columns:1fr}}
+.rfx{background:var(--coal);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+.rfx-tag{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.rfx-t{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--warm);margin-bottom:5px;line-height:1.25}
+.rfx-d{font-size:13px;color:var(--mineral);line-height:1.5}
+.rfx-cta{margin-top:11px}
+
 /* Panorama */
 .pano{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
 .pano .col{flex:0 0 auto;width:64px;text-align:center}
@@ -186,7 +197,8 @@ const DEFAULTS = {
   payments:['Pix','Débito'], /* + cartões (crédito) são adicionados dinamicamente */
   budgets:{Moradia:100,Apartamento:3000,Assinaturas:100,'Saúde':200,'Alimentação':600,Lazer:100,Uber:50,Beleza:100,Roupas:100,Presentes:100,Essencial:300,'Contas de Casa':250,'Educação':100,Lanches:80,Imprevistos:150,Outros:50},
   months:{}, /* m -> {opening:null, incomes:[], investments:[], expenses:[]} */
-  purchases:[] /* parceladas globais: {id,cat,desc,card,value,parcelas,start} */
+  purchases:[], /* parceladas globais: {id,cat,desc,card,value,parcelas,start} */
+  hourlyWage:null /* R$/hora p/ custo de oportunidade; null = estimado da renda */
 };
 
 let S = load();
@@ -248,6 +260,73 @@ function clarityArc(ratio){
   const col = ratio>=1?'var(--arc-4)':ratio>=0.75?'var(--arc-3)':'var(--arc-2)';
   const fill = f<=0 ? '' : `<path d="M4 26 A19 19 0 0 1 ${x} ${y}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
   return `<svg width="42" height="27" viewBox="0 0 46 30" aria-hidden="true"><path d="M4 26 A19 19 0 0 1 42 26" fill="none" stroke="var(--arc-track)" stroke-width="4" stroke-linecap="round"/>${fill}</svg>`;
+}
+
+/* ============================================================
+   IA DE REFLEXÃO — motor de regras (offline, sem backend)
+   Custo de oportunidade · assinaturas · pague-se primeiro ·
+   alertas · curto/médio/longo prazo. Pronto p/ plugar LLM depois.
+   ============================================================ */
+function estHourly(){
+  if(+S.hourlyWage>0) return +S.hourlyWage;
+  let tot=0,cnt=0; for(let i=0;i<12;i++){const inc=incomesTotal(i); if(inc>0){tot+=inc;cnt++;}}
+  const avg = cnt? tot/cnt : 0;
+  return avg>0 ? avg/176 : 20;   /* 176h úteis/mês; fallback R$20/h */
+}
+function fvMonthly(monthly,years,rate){ const A=monthly*12; return A*((Math.pow(1+rate,years)-1)/rate); }
+const pct = (a,b)=> b>0? Math.round((a/b)*100):0;
+function reflexoes(m){
+  const out=[], hw=estHourly();
+  const tot={}; for(const e of monthExpenseItems(m)) tot[e.cat]=(tot[e.cat]||0)+ +e.value;
+  const top=Object.entries(tot).sort((a,b)=>b[1]-a[1])[0];
+  if(top && top[1]>0){
+    const [cat,val]=top, hrs=hw?val/hw:0, fv=fvMonthly(val,10,0.10);
+    out.push({tag:'Custo de oportunidade', target:'base',
+      t:`${cat}: ${BRL(val)} neste mês`,
+      d:`Equivale a <b>${hrs.toFixed(1)} horas</b> do seu trabalho. Mantido todo mês e investido a ~10%/ano, em 10 anos viraria <b>${BRL(fv)}</b>.`,
+      cta:`Definir um teto para ${cat}`});
+  }
+  const assin=categoryReal('Assinaturas',m);
+  if(assin>0) out.push({tag:'Assinaturas', target:'base',
+    t:`${BRL(assin)}/mês em assinaturas`,
+    d:`São <b>${BRL(assin*12)} por ano</b>. Cortar o que você não usou nas últimas 2 semanas já monta parte da sua reserva.`,
+    cta:'Revisar assinaturas'});
+  const estouradas=S.categories.filter(c=>{const t=+(S.budgets[c]||0);return t>0 && categoryReal(c,m)/t>=1;});
+  if(estouradas.length) out.push({tag:'Alerta', target:'stay',
+    t:`${estouradas.length} categoria(s) no limite`,
+    d:`<b>${estouradas.slice(0,3).join(', ')}</b> estourou o teto — o Arco de Clareza está cheio. Hora de segurar até o fim do mês.`,
+    cta:'Ver orçamento acima'});
+  const inv=investTotal(m), inc=incomesTotal(m);
+  if(inc>0 && inv<inc*0.1){ const sug=inc*0.1;
+    out.push({tag:'Pague-se primeiro', target:'stay',
+      t:`Você guardou ${pct(inv,inc)}% da renda`,
+      d:`A meta saudável começa em <b>10%</b>. Guardar <b>${BRL(sug)}</b>/mês, investido, vira <b>${BRL(fvMonthly(sug,10,0.10))}</b> em 10 anos.`,
+      cta:'Registrar um investimento'}); }
+  if(m>0){ const cur=faturasTotal(m), prev=faturasTotal(m-1);
+    if(prev>0 && cur>prev) out.push({tag:'Cartão', target:'stay',
+      t:`Fatura subiu ${pct(cur-prev,prev)}%`,
+      d:`A fatura deste mês (${BRL(cur)}) está maior que a do mês anterior (${BRL(prev)}). Vale conferir o que puxou.`,
+      cta:'Ver cartões acima'}); }
+  return out.slice(0,4);
+}
+function reflexaoCard(m){
+  const c=document.createElement('div'); c.className='card reflex'; c.style.marginTop='16px';
+  const ins=reflexoes(m);
+  const body = ins.length ? ins.map((r,i)=>`
+    <div class="rfx">
+      <div class="rfx-tag">${r.tag}</div>
+      <div class="rfx-t">${r.t}</div>
+      <div class="rfx-d">${r.d}</div>
+      <button class="btn btn-ghost btn-sm rfx-cta" data-i="${i}" data-target="${r.target}">${r.cta}</button>
+    </div>`).join('') : `<div class="empty">Adicione entradas e gastos para a IA refletir com você.</div>`;
+  c.innerHTML=`<h3><span>✦ Reflexão · IA VIZIO</span><span class="sub">pensar antes de gastar</span></h3>
+    <div class="rfx-grid">${body}</div>
+    <div class="budmeta" style="margin-top:10px">A IA reflete a partir dos seus próprios dados — curto, médio e longo prazo. Ajuste o valor da sua hora em Cadastros (⚙️).</div>`;
+  c.querySelectorAll('.rfx-cta').forEach(b=>b.onclick=()=>{
+    if(b.dataset.target==='base'){ view='base'; render(); }
+    else toast('Veja o card indicado logo acima ↑');
+  });
+  return c;
 }
 
 /* ---------- GATING (Free x Pro) ---------- */
@@ -320,6 +399,9 @@ function renderMonth(){
   const g1=document.createElement('div'); g1.className='grid g2'; g1.style.marginTop='16px';
   g1.appendChild(entradasCard(m)); g1.appendChild(gastosCard(m));
   host.appendChild(g1);
+
+  // IA de Reflexão (diferencial)
+  host.appendChild(reflexaoCard(m));
 
   // parceladas + panorama
   const g2=document.createElement('div'); g2.className='grid g2'; g2.style.marginTop='16px';
@@ -560,6 +642,17 @@ function renderBase(){
   wrap.appendChild(bc);
   host.appendChild(wrap);
 
+  // IA de Reflexão — valor da hora (custo de oportunidade)
+  const ia=document.createElement('div'); ia.className='card reflex'; ia.style.marginTop='16px';
+  ia.innerHTML=`<h3><span>✦ IA de Reflexão</span><span class="sub">custo de oportunidade</span></h3>
+    <p class="budmeta">Quanto vale 1 hora do seu trabalho? A IA usa isso para traduzir gastos em horas. Em branco = estimado pela sua renda (${BRL(estHourly())}/h).</p>
+    <div class="addrow">
+      <input class="f-num num" id="ia-hw" type="number" step="0.01" placeholder="R$/hora" value="${S.hourlyWage??''}">
+      <button class="btn btn-sm" id="ia-save">Salvar</button>
+    </div>`;
+  ia.querySelector('#ia-save').onclick=()=>{const v=ia.querySelector('#ia-hw').value; S.hourlyWage=v===''?null:+v; toast('Valor da hora atualizado'); render();};
+  host.appendChild(ia);
+
   // dados
   const dc=document.createElement('div'); dc.className='card'; dc.style.marginTop='16px';
   dc.innerHTML=`<h3>💾 Seus dados</h3>
@@ -645,5 +738,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 
 render();
 </script>
+
+<!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>
