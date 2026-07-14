@@ -10,14 +10,16 @@ const VM_STRIPE_LINK  = 'https://buy.stripe.com/bJecN7evH1Zm57CdGTeIw01';
 
 const vmdb = window.supabase.createClient(VM_SUPABASE_URL, VM_SUPABASE_KEY);
 let vmUser = null;
+let vmSource = null;   // origem do plano: 'stripe' (pago) | 'cortesia' (isento)
 
 /* ---------- plano vindo do servidor ---------- */
 async function vmRefreshPlan(){
   if(!vmUser){ S.plan='free'; save(); render(); return; }
   const { data, error } = await vmdb.from('vm_assinaturas')
-    .select('plan,status,current_period_end').eq('user_id', vmUser.id).maybeSingle();
+    .select('plan,status,source,nota,current_period_end').eq('user_id', vmUser.id).maybeSingle();
   if(error){ console.warn('vm_assinaturas:', error.message); return; }
   const novo = (data && data.plan==='pro') ? 'pro' : 'free';
+  vmSource = data?.source || null;          // 'stripe' | 'cortesia'
   if(S.plan!==novo){ S.plan=novo; save(); }
   render();
 }
@@ -37,12 +39,16 @@ function vmAccount(){
     ${logged ? `
       <h2>Sua conta</h2>
       <p style="margin-bottom:10px">${vmUser.email}</p>
-      <div style="margin:14px 0"><span class="plan-chip ${S.plan==='pro'?'plan-pro':'plan-free'}">${S.plan==='pro'?'Pro ativo':'Plano Free'}</span></div>
+      <div style="margin:14px 0"><span class="plan-chip ${S.plan==='pro'?'plan-pro':'plan-free'}">${
+        S.plan==='pro' ? (vmSource==='cortesia' ? 'Pro · cortesia (isento)' : 'Pro ativo') : 'Plano Free'
+      }</span></div>
       ${S.plan==='pro'
-        ? `<p class="budmeta">Obrigado por assinar. Você tem acesso ao ano inteiro, cartões ilimitados e a IA de Reflexão.</p>`
+        ? (vmSource==='cortesia'
+            ? `<p class="budmeta">Acesso <b>cortesia (isento)</b> — não é uma assinatura paga e não entra no faturamento. Você tem o ano inteiro, cartões ilimitados e a IA de Reflexão.</p>`
+            : `<p class="budmeta">Obrigado por assinar. Você tem acesso ao ano inteiro, cartões ilimitados e a IA de Reflexão.</p>`)
         : `<div class="price">R$ 9,90<small>/mês</small></div>
-           <button class="btn" id="vm-sub">Assinar o Pro</button>`}
-      <button class="btn btn-ghost" id="vm-sync" style="width:100%;margin-top:8px">Já paguei — atualizar meu plano</button>
+           <button class="btn btn-money" id="vm-sub">Assinar o Pro</button>`}
+      ${vmSource==='cortesia' ? '' : `<button class="btn btn-ghost" id="vm-sync" style="width:100%;margin-top:8px">Já paguei — atualizar meu plano</button>`}
       <button class="linklike" id="vm-out">Sair</button>
     ` : `
       <h2>Entrar</h2>
@@ -59,7 +65,8 @@ function vmAccount(){
   if(logged){
     const sub=document.getElementById('vm-sub');
     if(sub) sub.onclick=()=>{ window.open(vmSubscribeUrl(),'_blank','noopener'); toast('Finalize o pagamento na aba aberta'); };
-    document.getElementById('vm-sync').onclick=async()=>{ toast('Verificando...'); await vmRefreshPlan(); vmAccount(); };
+    const sync=document.getElementById('vm-sync');
+    if(sync) sync.onclick=async()=>{ toast('Verificando...'); await vmRefreshPlan(); vmAccount(); };
     document.getElementById('vm-out').onclick=async()=>{ await vmdb.auth.signOut(); r.innerHTML=''; toast('Você saiu'); };
   } else {
     document.getElementById('vm-send').onclick=async()=>{

@@ -71,3 +71,13 @@
 
 /* ---- AURA: conteúdo sempre acima da luz (regra do padrão v3) ---- */
 .topbar,.wrap,.overlay,.toast{position:relative;z-index:1}
+
+/* ---- AURA · ajuste de produto (VIZIO Money) ----------------------------
+   Os feixes (.vz-ray) do padrão v3 são desligados AQUI, por decisão de marca:
+   num app de leitura densa (tabelas e números) a linha diagonal cruzava o
+   conteúdo e sujava a leitura. Mantemos o resto do vocabulário: brilho que
+   respira, poça de luz e partículas.
+   Feito por override — o aura.js segue CANÔNICO e intocado, para o Money não
+   divergir do padrão e continuar recebendo futuras evoluções da AURA.
+   ------------------------------------------------------------------------ */
+.vz-ray{display:none !important}

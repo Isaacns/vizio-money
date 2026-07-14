@@ -157,9 +157,13 @@ tr:last-child td{border-bottom:none}
   padding-right:calc(18px + env(safe-area-inset-right));
   padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 
-/* 2. Alvos de toque ≥44px em qualquer tela de dedo (não só por largura) */
-@media (pointer:coarse){
-  .btn{padding:13px 18px;font-size:14px;min-height:44px}
+/* 2. Alvos de toque ≥44px.
+   Dupla trava de propósito: (pointer:coarse) pega o dedo em qualquer largura,
+   e (max-width) pega híbridos/tablets/desktop-touch onde a detecção de ponteiro
+   mente. Medição no desktop mostrou botão de 27px porque só a 1ª regra existia. */
+@media (pointer:coarse), (max-width:820px){
+  .btn{padding:13px 18px;font-size:14px;min-height:44px;
+    display:inline-flex;align-items:center;justify-content:center}
   .btn-sm{padding:11px 14px;font-size:13px;min-height:44px}
   .icon-btn{width:44px;height:44px;font-size:18px}
   .mbtn{min-height:44px;padding:10px 16px}
@@ -409,9 +413,15 @@ function reflexaoCard(m){
   return c;
 }
 
-/* ---------- GATING (Free x Pro) ---------- */
+/* ---------- GATING (Free x Pro) ----------
+   Free = mês atual + o PRÓXIMO. Não é generosidade: a mágica do produto
+   (parcela que se espalha, fatura por competência) só existe ENTRE meses.
+   Travar tudo fazia a pessoa sair antes de sentir o valor — e "grátis
+   limitado demais" é a reclamação nº1 contra o líder de mercado.
+   O Pro vende o ano completo (Jan–Dez), IA, relatórios e cartões ilimitados. */
 const isPro = () => S.plan==='pro';
-function monthLocked(m){ return !isPro() && m!==S.current; }     // Free: só o mês atual
+const freeMonths = () => [S.current, Math.min(11, S.current+1)];
+function monthLocked(m){ return !isPro() && !freeMonths().includes(m); }
 function cardsLimited(){ return !isPro(); }                       // Free: até 2 cartões
 
 /* ============================================================
