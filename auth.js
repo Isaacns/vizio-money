@@ -100,10 +100,11 @@ function vmAccount(){
   if(VM.user) return vmMinhaConta();
 
   r.innerHTML = `<div class="overlay"><form class="sheet" id="vm-form" autocomplete="on">
-    <div class="brand-lockup" style="justify-content:center;margin-bottom:6px">
-      <span class="brand-mark"><img src="brand/logo.svg?v=0.3" width="30" height="27" alt=""></span>
-      <span><span class="brand-word">VIZIO <b>Money</b></span>
-      <span class="brand-badge" style="display:block">VIZIO Finance</span></span>
+    <!-- marca viva: anel girando + símbolo flutuando e batendo (padrão VIZIO) -->
+    <div class="vm-ring"><div class="vm-core"><img src="brand/logo.svg?v=0.4" alt="VIZIO Money"></div></div>
+    <div style="text-align:center;margin-bottom:6px">
+      <span class="brand-word">VIZIO <b>Money</b></span>
+      <span class="brand-badge" style="display:block;margin-top:3px">VIZIO Finance</span>
     </div>
     <div class="vm-tabs">
       <button type="button" class="vm-tab ${vmTab==='entrar'?'on':''}" data-t="entrar">Entrar</button>
@@ -187,7 +188,7 @@ function vmMinhaConta(){
 
   r.innerHTML = `<div class="overlay"><div class="sheet">
     <div class="brand-lockup" style="justify-content:center;margin-bottom:12px">
-      <span class="brand-mark"><img src="brand/logo.svg?v=0.3" width="30" height="27" alt=""></span>
+      <span class="brand-mark"><img src="brand/logo.svg?v=0.4" width="30" height="27" alt=""></span>
       <span class="brand-word">VIZIO <b>Money</b></span>
     </div>
     <h2>Sua conta</h2>
@@ -205,11 +206,15 @@ function vmMinhaConta(){
            <button class="btn btn-money" id="vm-sub" style="width:100%">Assinar o Pro</button>
            <button class="btn btn-ghost" id="vm-sync" style="width:100%;margin-top:8px">Já paguei — atualizar</button>`}
 
+    <button class="btn btn-ghost" id="vm-pass" style="width:100%;margin-top:8px">Definir / trocar senha</button>
     <button class="linklike" id="vm-out">Sair</button>
     <button class="linklike" id="vm-close">Fechar</button>
   </div></div>`;
 
   document.getElementById('vm-close').onclick=()=> r.innerHTML='';
+  /* Já logado (ex.: pelo link no celular) consegue criar a senha aqui mesmo,
+     sem precisar de novo e-mail — é o caminho mais curto para destravar o PC. */
+  document.getElementById('vm-pass').onclick=()=> vmDefinirSenha(true);
   const sub=document.getElementById('vm-sub');
   if(sub) sub.onclick=()=>{ window.open(vmSubscribeUrl(),'_blank','noopener'); toast('Finalize o pagamento na aba aberta'); };
   const sync=document.getElementById('vm-sync');
@@ -219,13 +224,56 @@ function vmMinhaConta(){
   };
 }
 
+/* ================= definir nova senha =================
+   O link do e-mail (recovery) já autentica e devolve à página. Sem esta tela,
+   o usuário caía direto no app e nunca conseguia definir a senha — era o que
+   acontecia. Serve também para quem tem conta antiga e nunca teve senha. */
+function vmDefinirSenha(primeira){
+  const r = document.getElementById('overlayRoot');
+  r.innerHTML = `<div class="overlay"><form class="sheet" id="vm-pf">
+    <div class="brand-lockup" style="justify-content:center;margin-bottom:10px">
+      <span class="brand-mark"><img src="brand/logo.svg?v=0.4" width="30" height="27" alt=""></span>
+      <span class="brand-word">VIZIO <b>Money</b></span>
+    </div>
+    <h2>${primeira ? 'Crie sua senha' : 'Nova senha'}</h2>
+    <p>${primeira ? 'Sua conta ainda não tem senha. Defina uma para entrar pelo computador também.'
+                  : 'Escolha uma senha nova para a sua conta.'}</p>
+    <div class="vm-err" id="vm-perr"></div>
+    <div class="vm-field"><label for="vm-p1">Nova senha</label>
+      <input id="vm-p1" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" required></div>
+    <div class="vm-field"><label for="vm-p2">Repita a senha</label>
+      <input id="vm-p2" type="password" autocomplete="new-password" required></div>
+    <button class="btn" type="submit" id="vm-psave" style="width:100%">Salvar senha</button>
+    <button type="button" class="linklike" id="vm-pskip">Agora não</button>
+  </form></div>`;
+
+  const err = m => { const e=document.getElementById('vm-perr'); e.textContent=m; e.style.display=m?'block':'none'; };
+  document.getElementById('vm-pskip').onclick=()=>{ r.innerHTML=''; vmLimparHash(); };
+  document.getElementById('vm-pf').onsubmit = async (ev)=>{
+    ev.preventDefault(); err('');
+    const p1=document.getElementById('vm-p1').value, p2=document.getElementById('vm-p2').value;
+    if(p1.length<8) return err('A senha precisa de pelo menos 8 caracteres.');
+    if(p1!==p2)     return err('As senhas não são iguais.');
+    const b=document.getElementById('vm-psave'); b.disabled=true; b.textContent='Salvando…';
+    const { error } = await vmdb.auth.updateUser({ password:p1 });
+    if(error){ b.disabled=false; b.textContent='Salvar senha'; return err(error.message); }
+    vmLimparHash(); r.innerHTML='';
+    await vmRefreshPlan();
+    toast('Senha definida! Agora você entra por e-mail e senha ✅');
+  };
+}
+/* tira o #access_token da barra de endereço depois de usar */
+function vmLimparHash(){
+  if(location.hash) history.replaceState(null,'',location.pathname+location.search);
+}
+
 /* ================= paywall ================= */
 window.paywall = function(reason){
   if(!VM.user){ vmAccount(); toast(reason||'Entre para assinar o Pro'); return; }
   const r=document.getElementById('overlayRoot');
   r.innerHTML=`<div class="overlay"><div class="sheet">
     <div class="brand-lockup" style="justify-content:center;margin-bottom:12px">
-      <span class="brand-mark"><img src="brand/logo.svg?v=0.3" width="30" height="27" alt=""></span>
+      <span class="brand-mark"><img src="brand/logo.svg?v=0.4" width="30" height="27" alt=""></span>
       <span class="brand-word">VIZIO <b>Money</b></span>
     </div>
     <h2>Desbloqueie o ano inteiro</h2>
@@ -251,13 +299,21 @@ window.paywall = function(reason){
   const btn=document.getElementById('btnMenu');
   if(btn) btn.onclick=vmAccount;
 
+  /* O link do e-mail chega como #access_token=...&type=recovery.
+     Detecto pelo hash porque o evento PASSWORD_RECOVERY pode disparar ANTES
+     deste script montar — e aí ele se perde e o usuário cai direto no app. */
+  const hash = new URLSearchParams((location.hash||'').replace(/^#/,''));
+  const ehRecovery = hash.get('type')==='recovery';
+
   try{ await vmCarregarSessao(); }
   catch(e){ console.warn('VIZIO Money · acesso:', e.message); }  // falha aberta
   vmChrome(); render();
 
+  if(ehRecovery && VM.user){ vmDefinirSenha(false); }
+
   vmdb.auth.onAuthStateChange(async (evt)=>{
     if(evt==='SIGNED_IN' || evt==='SIGNED_OUT' || evt==='TOKEN_REFRESHED') await vmRefreshPlan();
-    if(evt==='PASSWORD_RECOVERY') toast('Defina sua nova senha pelo link do e-mail');
+    if(evt==='PASSWORD_RECOVERY') vmDefinirSenha(false);
   });
 
   if(location.search.includes('assinar=1') && S.plan!=='pro'){
