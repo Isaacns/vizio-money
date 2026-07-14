@@ -1,5 +1,5 @@
 /* VIZIO Money — service worker (cache app-shell p/ uso offline) */
-const CACHE = 'vizio-money-v1';
+const CACHE = 'vizio-money-v2';
 const ASSETS = ['./','./index.html','./brand.css','./brand/logo.svg','./manifest.webmanifest'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(()=>self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())); });

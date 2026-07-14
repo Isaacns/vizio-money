@@ -1,13 +1,13 @@
 {
   "name": "VIZIO Money",
   "short_name": "VIZIO Money",
-  "description": "Sua vida financeira, finalmente leve. Controle pessoal Jan–Dez.",
+  "description": "A arte de enxergar. Controle financeiro pessoal, Jan–Dez.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F4F7FB",
-  "theme_color": "#1C64F0",
+  "background_color": "#0A1020",
+  "theme_color": "#0A1020",
   "lang": "pt-BR",
   "icons": [
     { "src": "brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

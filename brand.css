@@ -1,45 +1,66 @@
 /* ==========================================================================
-   VIZIO MONEY — brand.css  (IDENTIDADE ISOLADA / TROCÁVEL)
+   VIZIO MONEY — brand.css  (IDENTIDADE OFICIAL v1 · DARK PREMIUM)
+   "A arte de enxergar."  ·  Categoria: Paz Financeira
+   Baseado no Brand OS v0.1 do cliente + refinamento v0.2 aprovado.
    Para reskin: altere APENAS este arquivo + brand/logo.svg.
-   Cores derivadas do azul oficial VIZIO (#1C64F0) + verde prosperidade.
-   Logo abaixo é PROVISÓRIA (o usuário fornecerá a identidade final).
    ========================================================================== */
+
+/* ---- Satoshi (display) via Fontshare ; Space Grotesk (UI) via Google ---- */
+@font-face{font-family:'Satoshi';src:url('https://api.fontshare.com/v2/fonts/satoshi/fonts/satoshi-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Satoshi';src:url('https://api.fontshare.com/v2/fonts/satoshi/fonts/satoshi-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Satoshi';src:url('https://api.fontshare.com/v2/fonts/satoshi/fonts/satoshi-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+
 :root{
-  /* Marca */
-  --brand:#1C64F0; --brand-2:#3C94FC; --brand-deep:#1450C8; --brand-soft:#EAF1FE;
-  --grow:#10B981; --grow-2:#34D399; --grow-soft:#E7F8F1;
-  --amber:#F59E0B; --amber-soft:#FEF3E2;
-  --grad-brand:linear-gradient(120deg,#1C64F0 0%,#10B981 100%);
+  /* ---- Base escura (a marca vive no escuro ~92%) ---- */
+  --deep:#0A1020;      /* Azul Profundo — fundo base */
+  --night:#111827;     /* Azul Noite — superfícies */
+  --coal:#161C28;      /* Carvão azulado — superfície 2 / chips */
+  --bg:#0A1020;
+  --surface:#111827;
 
-  /* Base clara */
-  --ink:#0E1726; --s700:#1F2B40; --s600:#3A475C; --s500:#5B6781; --s400:#8A94A6;
-  --s300:#C4CCD8; --s200:#E4E9F0; --s100:#F1F4F9;
-  --bg:#F4F7FB; --surface:#FFFFFF; --line:rgba(14,23,38,.09); --line2:rgba(14,23,38,.14);
+  /* ---- Ouro discreto (acento raro <8%: foco, valor, conquista) ---- */
+  --brand:#C9A968; --brand-2:#D9BE86; --brand-deep:#B4914F;
+  --brand-soft:rgba(201,169,104,.14);
+  --grad-brand:linear-gradient(120deg,#D9BE86 0%,#C9A968 100%);
+  --gold:#C9A968; --gold-soft:rgba(201,169,104,.14);
 
-  /* Semáforo financeiro */
-  --pos:#10B981; --pos-bg:#E7F8F1;
-  --warn:#F59E0B; --warn-bg:#FEF3E2;
-  --neg:#E11D48; --neg-bg:#FDE7EC;
+  /* ---- Tinta & neutros (texto claro sobre escuro) ---- */
+  --warm:#F7F6F3;      /* Branco Quente */
+  --sand:#EBE2D6;      /* Areia */
+  --mineral:#C7CDD5;   /* Cinza Mineral */
+  --ink:#F7F6F3; --s700:#E7EAF0; --s600:#C7CDD5; --s500:#9AA3B2; --s400:#6B7486;
+  --s300:#2A3242; --s200:#1C2330; --s100:#161C28;
+  --line:rgba(199,205,213,.12); --line2:rgba(199,205,213,.22);
+  --white:#F7F6F3;
 
-  /* Fases da lua do orçamento (motivo-assinatura) */
-  --moon-0:#C4CCD8; --moon-1:#34D399; --moon-2:#10B981; --moon-3:#F59E0B; --moon-4:#E11D48;
+  /* ---- Semáforo financeiro (contido, dentro da paleta) ---- */
+  --grow:#5FA98A; --grow-soft:rgba(95,169,138,.16);
+  --amber:#C9A968; --amber-soft:rgba(201,169,104,.16);
+  --pos:#5FA98A; --pos-bg:rgba(95,169,138,.16);
+  --warn:#C9A968; --warn-bg:rgba(201,169,104,.16);
+  --neg:#D9756A; --neg-bg:rgba(217,117,106,.16);
 
-  /* Tipografia */
-  --font:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
-  --font-display:'Plus Jakarta Sans','Inter',sans-serif;
+  /* ---- Arco de Clareza (motivo-assinatura; antes “fases da lua”) ---- */
+  --arc-track:#2A3242; --arc-1:#5FA98A; --arc-2:#C9A968; --arc-3:#C9A968; --arc-4:#D9756A;
+  /* compat com JS antigo (fases) — mapeadas ao arco */
+  --moon-0:#2A3242; --moon-1:#5FA98A; --moon-2:#C9A968; --moon-3:#C9A968; --moon-4:#D9756A;
 
-  /* Raio & sombra */
-  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-full:999px;
-  --sh-sm:0 1px 2px rgba(14,23,38,.05);
-  --sh-md:0 4px 16px rgba(14,23,38,.07);
-  --sh-lg:0 14px 40px rgba(14,23,38,.12);
+  /* ---- Tipografia ---- */
+  --font:'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-display:'Satoshi','Space Grotesk',system-ui,sans-serif;
+
+  /* ---- Raio & sombra (sombras discretas no escuro) ---- */
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-full:999px;
+  --sh-sm:0 1px 2px rgba(0,0,0,.35);
+  --sh-md:0 6px 20px rgba(0,0,0,.4);
+  --sh-lg:0 18px 50px rgba(0,0,0,.55);
 }
 
-/* Wordmark provisória — trocável. Sem ícone “fofo”, mais sóbria. */
-.brand-lockup{display:inline-flex;align-items:center;gap:10px;text-decoration:none}
-.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);
-  display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-sm)}
-.brand-mark svg{display:block}
-.brand-word{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--ink);line-height:1}
-.brand-word b{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
-.brand-badge{font-family:var(--font);font-size:10px;font-weight:600;color:var(--s500)}
+/* ---- Lockup de marca (topbar) ---- */
+.brand-lockup{display:inline-flex;align-items:center;gap:11px;text-decoration:none}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--deep);border:1px solid rgba(201,169,104,.45);
+  display:flex;align-items:center;justify-content:center}
+.brand-mark svg,.brand-mark img{display:block}
+.brand-word{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.01em;color:var(--warm);line-height:1}
+.brand-word b{color:var(--gold);font-weight:700}
+.brand-badge{font-family:var(--font);font-size:10px;font-weight:500;color:var(--mineral)}

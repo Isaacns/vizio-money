@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1C64F0">
-<title>VIZIO Money — sua vida financeira, finalmente leve</title>
+<meta name="theme-color" content="#0A1020">
+<title>VIZIO Money — a arte de enxergar</title>
 <link rel="icon" href="brand/logo.svg">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="brand.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--font);color:var(--s600);background:var(--bg);-webkit-tap-highlight-color:transparent;
-  background-image:radial-gradient(1000px 340px at 100% -8%,rgba(28,100,240,.06),transparent 60%),
-  radial-gradient(800px 320px at -8% 108%,rgba(16,185,129,.07),transparent 60%)}
+  background-image:radial-gradient(900px 320px at 100% -8%,rgba(201,169,104,.06),transparent 62%),
+  radial-gradient(760px 300px at -8% 108%,rgba(199,205,213,.04),transparent 62%)}
 h1,h2,h3,.disp{font-family:var(--font-display);color:var(--ink);letter-spacing:-.02em;line-height:1.15}
 .num{font-variant-numeric:tabular-nums lining-nums}
 button{font-family:inherit;cursor:pointer}
@@ -23,11 +25,11 @@ input,select{font-family:inherit;font-size:14px}
 
 /* App shell */
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;justify-content:space-between;
-  padding:12px 18px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  padding:12px 18px;background:rgba(10,16,32,.72);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .topbar .right{display:flex;align-items:center;gap:10px}
 .plan-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:var(--r-full)}
 .plan-free{color:var(--s600);background:var(--s100);border:1px solid var(--line)}
-.plan-pro{color:#0B7A57;background:var(--grow-soft);border:1px solid rgba(16,185,129,.3)}
+.plan-pro{color:var(--gold);background:var(--gold-soft);border:1px solid rgba(201,169,104,.4)}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--s600);font-size:16px;display:flex;align-items:center;justify-content:center}
 
 .wrap{max-width:1080px;margin:0 auto;padding:18px 18px 120px}
@@ -37,7 +39,7 @@ input,select{font-family:inherit;font-size:14px}
 .monthstrip::-webkit-scrollbar{display:none}
 .mbtn{flex:0 0 auto;padding:8px 14px;border-radius:var(--r-full);border:1px solid var(--line);background:var(--surface);
   color:var(--s600);font-weight:600;font-size:13px;position:relative}
-.mbtn.active{background:var(--grad-brand);color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
+.mbtn.active{background:var(--grad-brand);color:#0A1020;border-color:transparent;box-shadow:var(--sh-md);font-weight:700}
 .mbtn.locked{opacity:.5}
 .mbtn .lk{font-size:9px;margin-left:4px}
 
@@ -76,7 +78,7 @@ tr:last-child td{border-bottom:none}
 .addrow input,.addrow select{padding:9px 11px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0}
 .addrow input[type=date]{color:var(--s600)}
 .addrow .f-desc{flex:2;min-width:120px} .addrow .f-num{width:110px} .addrow .f-sel{flex:1;min-width:110px} .addrow .f-sm{width:90px}
-.btn{border:none;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13px;color:#fff;background:var(--grad-brand);box-shadow:var(--sh-sm)}
+.btn{border:none;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13px;color:#0A1020;background:var(--grad-brand);box-shadow:var(--sh-sm)}
 .btn:hover{filter:brightness(1.04)} .btn:active{transform:translateY(1px)}
 .btn-ghost{background:var(--surface);color:var(--brand);border:1px solid var(--brand-soft)}
 .btn-sm{padding:6px 11px;font-size:12px}
@@ -120,7 +122,7 @@ tr:last-child td{border-bottom:none}
 
 /* toast + celebrate */
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:90;
-  background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--r-full);font-size:13px;font-weight:600;
+  background:#1C2330;color:var(--warm);border:1px solid var(--line2);padding:11px 18px;border-radius:var(--r-full);font-size:13px;font-weight:600;
   box-shadow:var(--sh-lg);transition:.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -238,6 +240,15 @@ function moon(ratio){
   return {g:'○',c:'var(--moon-0)',label:'folga'};
 }
 const barColor = r => r>=1?'var(--neg)':r>=0.75?'var(--warn)':'var(--grow)';
+/* Arco de Clareza — motivo-assinatura (substitui as fases da lua) */
+function clarityArc(ratio){
+  const f=Math.max(0,Math.min(1,ratio||0));
+  const cx=23,cy=26,r=19, th=Math.PI*(1-f);
+  const x=(cx+r*Math.cos(th)).toFixed(1), y=(cy-r*Math.sin(th)).toFixed(1);
+  const col = ratio>=1?'var(--arc-4)':ratio>=0.75?'var(--arc-3)':'var(--arc-2)';
+  const fill = f<=0 ? '' : `<path d="M4 26 A19 19 0 0 1 ${x} ${y}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+  return `<svg width="42" height="27" viewBox="0 0 46 30" aria-hidden="true"><path d="M4 26 A19 19 0 0 1 42 26" fill="none" stroke="var(--arc-track)" stroke-width="4" stroke-linecap="round"/>${fill}</svg>`;
+}
 
 /* ---------- GATING (Free x Pro) ---------- */
 const isPro = () => S.plan==='pro';
@@ -428,11 +439,11 @@ function budgetCard(m){
       <div><div class="budcat">${esc(cat)}</div>
         <div class="bar"><i style="width:${Math.min(100,r*100)}%;background:${barColor(r)}"></i></div></div>
       <div class="budmeta num" style="text-align:right">${BRL(real)}<br><span style="opacity:.7">de ${teto?BRL(teto):'—'}</span></div>
-      <div class="moon" title="${mo.label}" style="color:${mo.c}">${mo.g}</div>
+      <div class="arc" title="${mo.label}">${clarityArc(r)}</div>
     </div>`;
   }).join('');
-  c.innerHTML=`<h3>🌙 Orçamento por categoria <span class="sub">fases da lua = quanto do teto já foi</span></h3>${lines}
-    <div class="budmeta" style="margin-top:10px">○ folga · ◔ tranquilo · ◑ metade · ◕ atenção · ● estourou. Ajuste os tetos em ⚙️ Cadastros.</div>`;
+  c.innerHTML=`<h3>Orçamento por categoria <span class="sub">Arco de Clareza = quanto do teto já foi</span></h3>${lines}
+    <div class="budmeta" style="margin-top:10px">O arco dourado se completa conforme você usa o teto — cheio = no limite. Ajuste os tetos em Cadastros.</div>`;
   return c;
 }
 

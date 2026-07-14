@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A1020">
+<title>VIZIO Money — a arte de enxergar o seu dinheiro</title>
+<meta name="description" content="Controle financeiro pessoal com clareza e paz. Veja para onde vai seu dinheiro, controle cartões e parcelas, e uma IA que te ajuda a decidir melhor. R$ 9,90/mês.">
+<link rel="icon" href="brand/logo.svg">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--s600);background:var(--deep);-webkit-tap-highlight-color:transparent;
+  background-image:radial-gradient(900px 380px at 100% -6%,rgba(201,169,104,.07),transparent 60%),
+  radial-gradient(760px 360px at -10% 22%,rgba(199,205,213,.04),transparent 60%);line-height:1.6}
+.disp{font-family:var(--font-display);color:var(--warm);letter-spacing:-.02em;line-height:1.12}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:920px;margin:0 auto;padding:0 20px}
+.sec{padding:64px 0}
+@media(max-width:640px){.sec{padding:48px 0}}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:30;background:rgba(10,16,32,.72);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav .row{max-width:920px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--deep);border:1px solid rgba(201,169,104,.45);display:flex;align-items:center;justify-content:center}
+.brand{display:flex;align-items:center;gap:11px}
+.bw{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--warm)}
+.bw b{color:var(--gold)}
+.btn{display:inline-block;border:none;border-radius:12px;padding:13px 22px;font-family:var(--font);font-weight:700;font-size:15px;cursor:pointer;transition:.15s;text-align:center}
+.btn-gold{background:var(--grad-brand);color:#0A1020}
+.btn-gold:hover{filter:brightness(1.05)}
+.btn-ghost{background:transparent;color:var(--warm);border:1px solid var(--line2)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.nav .btn{padding:9px 16px;font-size:14px}
+@media(max-width:520px){.nav .bw{font-size:16px} .nav .btn{padding:8px 13px;font-size:13px}}
+
+/* hero */
+.hero{text-align:center;padding:70px 0 40px}
+.eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+.hero h1{font-size:clamp(30px,7vw,52px);color:var(--warm)}
+.hero h1 .g{color:var(--gold)}
+.hero p.lead{font-size:clamp(16px,2.4vw,20px);color:var(--mineral);max-width:30em;margin:20px auto 0}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.microcopy{font-size:12.5px;color:var(--s500);margin-top:14px}
+.heroM{margin:38px auto 0;width:84px;height:84px;border-radius:20px;background:var(--night);border:1px solid rgba(201,169,104,.4);display:flex;align-items:center;justify-content:center}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:640px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--night);border:1px solid var(--line);border-radius:16px;padding:22px}
+.stat .big{font-family:var(--font-display);font-weight:800;font-size:34px;color:var(--gold);letter-spacing:-.02em}
+.stat .lab{font-size:13.5px;color:var(--mineral);margin-top:6px}
+.section-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:10px}
+.section-title{font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,34px);color:var(--warm);text-align:center;letter-spacing:-.02em}
+.section-sub{text-align:center;color:var(--mineral);max-width:34em;margin:12px auto 0;font-size:15.5px}
+
+/* features */
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:38px}
+@media(max-width:640px){.feats{grid-template-columns:1fr}}
+.feat{background:var(--night);border:1px solid var(--line);border-radius:16px;padding:24px}
+.feat.hi{border-color:rgba(201,169,104,.4);background:linear-gradient(180deg,rgba(201,169,104,.06),transparent)}
+.feat .ic{width:42px;height:42px;border-radius:11px;background:var(--coal);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.feat h3{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--warm);margin-bottom:7px}
+.feat p{font-size:14.5px;color:var(--mineral)}
+.feat .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,169,104,.4);border-radius:999px;padding:3px 9px;margin-bottom:12px}
+
+/* AI showcase */
+.ai{background:var(--night);border:1px solid rgba(201,169,104,.3);border-radius:22px;padding:32px;margin-top:38px}
+.ai .quote{font-family:var(--font-display);font-weight:500;font-size:clamp(17px,2.6vw,22px);color:var(--warm);line-height:1.4}
+.ai .quote .g{color:var(--gold)}
+.ai .lens{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+@media(max-width:640px){.ai .lens{grid-template-columns:1fr}}
+.lensbox{background:var(--coal);border:1px solid var(--line);border-radius:13px;padding:16px}
+.lensbox .t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.lensbox .d{font-size:13.5px;color:var(--mineral)}
+
+/* pricing */
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:38px}
+@media(max-width:640px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--night);border:1px solid var(--line);border-radius:18px;padding:28px}
+.plan.pro{border-color:var(--gold);position:relative}
+.plan .tier{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mineral)}
+.plan .price{font-family:var(--font-display);font-weight:800;font-size:40px;color:var(--warm);margin:8px 0 2px;letter-spacing:-.02em}
+.plan .price small{font-size:15px;color:var(--mineral);font-weight:500}
+.plan ul{list-style:none;margin:18px 0}
+.plan li{padding:7px 0 7px 26px;position:relative;font-size:14.5px;color:var(--s600)}
+.plan li::before{content:"";position:absolute;left:2px;top:12px;width:9px;height:9px;border-radius:2px;background:var(--gold)}
+.plan .btn{width:100%;margin-top:8px}
+.tagpro{position:absolute;top:-11px;right:20px;background:var(--grad-brand);color:#0A1020;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px}
+
+/* closing */
+.closing{text-align:center}
+.closing .q{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,4vw,32px);color:var(--warm);max-width:20em;margin:0 auto;line-height:1.3}
+.closing .q .g{color:var(--gold)}
+
+.foot{border-top:1px solid var(--line);padding:28px 0;color:var(--s500);font-size:12.5px;text-align:center}
+.foot .bw{font-size:15px;justify-content:center;display:inline-flex;gap:8px;align-items:center;color:var(--warm)}
+</style>
+</head>
+<body>
+
+<nav class="nav"><div class="row">
+  <a class="brand" href="#top">
+    <span class="mark"><img src="brand/logo.svg" width="18" height="18" alt="VIZIO Money"></span>
+    <span class="bw">VIZIO <b>Money</b></span>
+  </a>
+  <a class="btn btn-gold" href="index.html">Começar grátis</a>
+</div></nav>
+
+<div id="top" class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Paz financeira · a arte de enxergar</div>
+    <h1 class="disp">Enxergue o seu dinheiro.<br><span class="g">Decida com clareza.</span></h1>
+    <p class="lead">O controle financeiro pessoal que substitui a planilha por uma experiência leve — e uma IA que te ajuda a pensar antes de gastar. Sem susto de fatura, sem culpa no fim do mês.</p>
+    <div class="cta">
+      <a class="btn btn-gold" href="index.html">Começar grátis</a>
+      <a class="btn btn-ghost" href="#planos">Ver o plano · R$ 9,90/mês</a>
+    </div>
+    <div class="microcopy">Grátis para começar · R$ 9,90/mês para o ano inteiro e a IA · cancele quando quiser</div>
+    <div class="heroM">
+      <svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 25 V7 L16 20 L26 7 V25" fill="none" stroke="#C9A968" stroke-width="2.3" stroke-linejoin="miter"/></svg>
+    </div>
+  </header>
+
+  <section class="sec">
+    <div class="section-eyebrow">A dor é real</div>
+    <h2 class="section-title">A maioria não enxerga o próprio dinheiro</h2>
+    <p class="section-sub">Não é falta de esforço — é falta de clareza. E isso cobra um preço emocional alto.</p>
+    <div class="stats" style="margin-top:34px">
+      <div class="stat"><div class="big num">62,9%</div><div class="lab">não sabem quanto gastam por mês</div></div>
+      <div class="stat"><div class="big num">só 23%</div><div class="lab">conseguem guardar dinheiro com regularidade</div></div>
+      <div class="stat"><div class="big num">8,6/10</div><div class="lab">de ansiedade entre quem está no “caos” financeiro</div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="section-eyebrow">O que você ganha</div>
+    <h2 class="section-title">Clareza que cabe no bolso</h2>
+    <div class="feats">
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A968" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+        <h3>Visão do mês e do ano</h3><p>Entradas, saídas, investido e saldo — tudo somado sozinho, sem fórmula quebrada.</p></div>
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 46 30" fill="none" stroke="#C9A968" stroke-width="3" stroke-linecap="round"><path d="M4 26 A19 19 0 0 1 42 26"/><path d="M4 26 A19 19 0 0 1 30 9"/></svg></div>
+        <h3>Arco de Clareza</h3><p>Cada categoria tem um teto e um arco dourado que se completa — você vê o limite antes de estourar.</p></div>
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A968" stroke-width="1.6"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h3>Cartões & parcelas sob controle</h3><p>A fatura calculada por competência e o panorama das parcelas nos próximos 12 meses.</p></div>
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A968" stroke-width="1.6"><path d="M12 3v18M5 8l7-5 7 5"/></svg></div>
+        <h3>Alertas e dicas no seu contexto</h3><p>Avisos quando a fatura sobe ou a categoria aperta, e dicas de economia com base nos seus próprios dados.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="section-eyebrow">O diferencial VIZIO</div>
+    <h2 class="section-title">Uma IA que te faz pensar</h2>
+    <div class="ai">
+      <span class="badge" style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,169,104,.4);border-radius:999px;padding:3px 9px;margin-bottom:14px">IA de Reflexão</span>
+      <p class="quote">“Esse delivery foi o 6º do mês — <span class="g">R$ 210, quase 8 horas do seu trabalho.</span> Investido, em 10 anos viraria cerca de <span class="g">R$ 40 mil.</span> Quer transformar metade num aporte automático?”</p>
+      <div class="lens">
+        <div class="lensbox"><div class="t">Curto prazo</div><div class="d">Enxerga o gasto de hoje em horas de trabalho e sugere um teto.</div></div>
+        <div class="lensbox"><div class="t">Médio prazo</div><div class="d">Audita assinaturas e mostra como cortar 2 já monta sua reserva.</div></div>
+        <div class="lensbox"><div class="t">Longo prazo</div><div class="d">Projeta o que cada hábito vira em patrimônio — e propõe o aporte.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="planos">
+    <div class="section-eyebrow">Planos</div>
+    <h2 class="section-title">Democrático de verdade</h2>
+    <p class="section-sub">Comece de graça. Quando quiser o ano inteiro e a IA, é o preço de um cafezinho por mês.</p>
+    <div class="plans">
+      <div class="plan">
+        <div class="tier">Free</div>
+        <div class="price">R$ 0</div>
+        <ul>
+          <li>Mês atual completo</li>
+          <li>Até 2 cartões</li>
+          <li>Orçamento com Arco de Clareza</li>
+        </ul>
+        <a class="btn btn-ghost" href="index.html">Começar grátis</a>
+      </div>
+      <div class="plan pro">
+        <span class="tagpro">Recomendado</span>
+        <div class="tier">Pro</div>
+        <div class="price">R$ 9,90<small> /mês</small></div>
+        <ul>
+          <li>Os 12 meses (Jan–Dez)</li>
+          <li>Cartões e categorias ilimitados</li>
+          <li>Panorama de parcelamento & relatórios</li>
+          <li>IA de Reflexão + alertas e dicas</li>
+          <li>Seus dados protegidos (LGPD)</li>
+        </ul>
+        <a class="btn btn-gold" href="index.html" data-stripe="placeholder">Assinar o Pro</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec closing">
+    <p class="q">A tecnologia não é o produto.<br>O produto é <span class="g">paz com o seu dinheiro.</span></p>
+    <div class="cta" style="margin-top:28px">
+      <a class="btn btn-gold" href="index.html">Enxergar meu dinheiro agora</a>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot">
+  <div class="bw"><span class="mark" style="width:26px;height:26px;border-radius:7px"><img src="brand/logo.svg" width="15" height="15" alt=""></span> VIZIO <b style="color:var(--gold)">Money</b></div>
+  <p style="margin-top:10px">“A arte de enxergar.” · um produto <b style="color:var(--mineral)">VIZIO</b> · ecossistema <b style="color:var(--mineral)">INPERSON</b></p>
+  <p style="margin-top:6px">money.viziostudio.com.br</p>
+</footer>
+
+</body>
+</html>
