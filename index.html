@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=0.6">
+<link rel="stylesheet" href="brand.css?v=0.7">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* A luz da página vem do MODO AURA v3 (aura.js) — não de gradientes locais. */
@@ -122,6 +122,56 @@ tr:last-child td{border-bottom:none}
 .budcat{font-weight:600;color:var(--s700);font-size:13px}
 .bar{height:6px;border-radius:4px;background:var(--s100);overflow:hidden;margin-top:5px}
 .bar > i{display:block;height:100%;border-radius:4px}
+
+/* ==========================================================================
+   NAVEGAÇÃO — barra inferior no celular · menu lateral no desktop
+   Um só HTML alimenta as duas; o CSS decide qual aparece.
+   ========================================================================== */
+.bottomnav,.sidenav{display:none}
+.nav-i{display:flex;align-items:center;border:none;background:transparent;cursor:pointer;
+  color:var(--s500);font-family:inherit;font-weight:600;position:relative;transition:color .15s}
+.nav-ic{font-size:19px;line-height:1}
+.nav-i.on{color:var(--gold)}
+
+/* --- Celular: barra fixa embaixo, no alcance do polegar --- */
+@media(max-width:820px){
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:rgba(6,8,15,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .bottomnav .nav-i{flex:1;flex-direction:column;gap:3px;min-height:52px;justify-content:center;font-size:10.5px}
+  .bottomnav .nav-i.on::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%);
+    width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--grad-gold)}
+  .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+}
+
+/* --- Desktop: menu lateral fixo (padrão VIZIO Finance) --- */
+@media(min-width:821px){
+  .sidenav{display:flex;flex-direction:column;gap:4px;position:fixed;left:0;top:58px;bottom:0;width:186px;
+    z-index:20;padding:16px 12px;border-right:1px solid var(--line);background:rgba(14,20,34,.5)}
+  .sidenav .nav-i{gap:11px;padding:11px 12px;border-radius:10px;font-size:13.5px;justify-content:flex-start}
+  .sidenav .nav-i:hover{background:var(--coal);color:var(--warm)}
+  .sidenav .nav-i.on{background:rgba(201,169,104,.10);color:var(--gold)}
+  .sidenav .nav-i.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
+    border-radius:0 3px 3px 0;background:var(--grad-gold)}
+  .wrap{margin-left:186px}
+  .topbar{padding-left:26px}
+}
+
+/* --- Abas de módulo (dentro do Mês) --- */
+.mod-tabs{display:flex;gap:6px;margin:14px 0 4px;background:var(--coal);border:1px solid var(--line);
+  border-radius:12px;padding:4px;overflow-x:auto;scrollbar-width:none}
+.mod-tabs::-webkit-scrollbar{display:none}
+.mod-tab{flex:1;min-width:88px;display:flex;align-items:center;justify-content:center;gap:6px;
+  border:none;background:transparent;color:var(--s500);font-family:inherit;font-weight:700;font-size:12.5px;
+  padding:10px 8px;border-radius:9px;cursor:pointer;position:relative;white-space:nowrap;transition:.15s}
+.mod-tab:hover{color:var(--warm)}
+.mod-tab.on{background:var(--grad-brand);color:#fff;box-shadow:0 3px 14px rgba(28,100,240,.4)}
+.mod-ic{font-size:14px}
+.mod-badge{background:var(--neg);color:#fff;font-size:9.5px;font-weight:800;border-radius:99px;
+  padding:1px 5px;min-width:16px;text-align:center}
+.mod-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px rgba(201,169,104,.8)}
+@media(max-width:560px){ .mod-tab span:not(.mod-ic):not(.mod-badge){font-size:11px} .mod-tab{min-width:76px;padding:9px 5px} }
+@media (pointer:coarse),(max-width:820px){ .mod-tab{min-height:44px} }
 
 /* Cabeçalho do mês: saldo inicial discreto + data de hoje */
 .vm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
@@ -303,6 +353,9 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   </div>
 </header>
 
+<!-- Menu lateral (desktop). Some no celular, onde a barra inferior assume. -->
+<aside class="sidenav" id="sideNav"></aside>
+
 <div class="wrap">
   <!-- month strip -->
   <div class="monthstrip" id="monthStrip"></div>
@@ -322,8 +375,11 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 
 <div class="foot">
   <span>VIZIO Money · Jan–Dez · dados salvos neste dispositivo</span>
-  <span>powered by VIZIO · um produto INPERSON</span>
+  <span>VIZIO FINANCE · um produto INPERSON</span>
 </div>
+
+<!-- Barra inferior (celular). Some no desktop, onde a lateral assume. -->
+<nav class="bottomnav" id="bottomNav"></nav>
 
 <div id="overlayRoot"></div>
 <div class="toast" id="toast"></div>
@@ -560,10 +616,38 @@ function cardsLimited(){ return !isPro(); }                       // Free: até 
    RENDER
    ============================================================ */
 let activeMonth = S.current;
-let view = 'month'; // month | year | base
+let view = 'month';    // month | year | invest | base
+/* Módulos do mês. A auditoria mediu 3.364px (4 telas de rolagem) e 9 blocos
+   numa página só — e eles já se agrupavam sozinhos: 4 eram de cartão. */
+let modulo = 'resumo'; // resumo | movimento | cartoes | orcamento
+const MODULOS = [
+  { id:'resumo',    nome:'Resumo',    ic:'📊' },
+  { id:'movimento', nome:'Movimento', ic:'💸' },
+  { id:'cartoes',   nome:'Cartões',   ic:'💳' },
+  { id:'orcamento', nome:'Orçamento', ic:'🎯' }
+];
+/* Navegação principal: no celular vira barra inferior, no desktop menu lateral.
+   Mesma fonte de verdade para os dois — um lugar só define o menu. */
+const NAV = [
+  { id:'mes',    nome:'Mês',      ic:'📅', on:()=>view==='month' },
+  { id:'invest', nome:'Investir', ic:'🌱', on:()=>view==='invest' },
+  { id:'ano',    nome:'Ano',      ic:'📊', on:()=>view==='year' },
+  { id:'base',   nome:'Ajustes',  ic:'⚙️', on:()=>view==='base' }
+];
+function irPara(id){
+  if(id==='mes')    view='month';
+  if(id==='invest') view='invest';
+  if(id==='ano')    view='year';
+  if(id==='base')   view='base';
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
 
 function render(){
+  renderNav();
   renderStrip();
+  /* A faixa de meses só faz sentido dentro do Mês. Nas outras visões some. */
+  document.getElementById('monthStrip').classList.toggle('hide', view!=='month');
   document.getElementById('planChip').className = 'plan-chip '+(isPro()?'plan-pro':'plan-free');
   document.getElementById('planChip').textContent = isPro()?'Pro':'Free';
   document.getElementById('viewMonth').classList.toggle('hide', view!=='month');
@@ -577,13 +661,20 @@ function render(){
   save();
 }
 
+/* Uma função monta as DUAS navegações (barra inferior + lateral) a partir do
+   mesmo NAV. Se um dia um item mudar, muda nos dois — sem menu órfão. */
+function renderNav(){
+  const html = NAV.map(n=>`<button class="nav-i${n.on()?' on':''}" data-nav="${n.id}">
+      <span class="nav-ic">${n.ic}</span><span class="nav-nm">${n.nome}</span></button>`).join('');
+  const bn=document.getElementById('bottomNav'), sd=document.getElementById('sideNav');
+  bn.innerHTML=html; sd.innerHTML=html;
+  [...bn.children, ...sd.children].forEach(b=>b.onclick=()=>irPara(b.dataset.nav));
+}
+
 function renderStrip(){
   const el=document.getElementById('monthStrip'); el.innerHTML='';
-  // botões de visão: Ano e Investimentos
-  const yb=document.createElement('button'); yb.className='mbtn'+(view==='year'?' active':''); yb.textContent='📊 Ano';
-  yb.onclick=()=>{view='year';render()}; el.appendChild(yb);
-  const ib=document.createElement('button'); ib.className='mbtn'+(view==='invest'?' active':''); ib.textContent='🌱 Investir';
-  ib.onclick=()=>{view='invest';render()}; el.appendChild(ib);
+  /* Ano/Investir saíram daqui: agora moram no menu. A faixa volta a ser
+     só o que ela promete — a linha do tempo dos meses. */
   MONTHS.forEach((nm,m)=>{
     const b=document.createElement('button');
     const locked=monthLocked(m);
@@ -632,33 +723,48 @@ function renderMonth(){
     ${kpiBox('Saldo do mês',sf>=0?'var(--pos)':'var(--neg)',BRL(sf), sf>=0?'😌':'⚠️')}`;
   host.appendChild(kpi);
 
-  /* Entradas + Investimentos lado a lado: primeiro você se paga, depois gasta. */
-  const g1=document.createElement('div'); g1.className='grid g2'; g1.style.marginTop='16px';
-  g1.appendChild(entradasCard(m)); g1.appendChild(investCard(m));
-  host.appendChild(g1);
+  /* Abas de módulo: cada uma entrega 2–3 blocos em vez de 9 empilhados. */
+  const tabs=document.createElement('div'); tabs.className='mod-tabs';
+  MODULOS.forEach(mo=>{
+    const b=document.createElement('button');
+    b.className='mod-tab'+(modulo===mo.id?' on':'');
+    b.innerHTML=`<span class="mod-ic">${mo.ic}</span><span>${mo.nome}</span>${vmBadge(mo.id,m)}`;
+    b.onclick=()=>{ modulo=mo.id; render(); };
+    tabs.appendChild(b);
+  });
+  host.appendChild(tabs);
 
-  // Gastos ocupa a linha seguinte, sozinho (é a tabela mais densa)
-  const g2=document.createElement('div'); g2.className='grid'; g2.style.marginTop='16px';
-  g2.appendChild(gastosCard(m));
-  host.appendChild(g2);
+  const g=(cls)=>{ const d=document.createElement('div'); d.className='grid '+(cls||''); d.style.marginTop='16px'; return d; };
 
-  // IA de Reflexão (diferencial)
-  host.appendChild(reflexaoCard(m));
-
-  // parceladas + panorama
-  const g3=document.createElement('div'); g3.className='grid g2'; g3.style.marginTop='16px';
-  g3.appendChild(parceladasCard(m)); g3.appendChild(panoramaCard());
-  host.appendChild(g3);
-
-  /* Os dois lados do cartão, lado a lado: o que vence agora x o que estou criando */
-  const g4=document.createElement('div'); g4.className='grid g2'; g4.style.marginTop='16px';
-  g4.appendChild(cardsCard(m)); g4.appendChild(usoCartaoCard(m));
-  host.appendChild(g4);
-
-  // orçamento
-  const g5=document.createElement('div'); g5.className='grid'; g5.style.marginTop='16px';
-  g5.appendChild(budgetCard(m));
-  host.appendChild(g5);
+  if(modulo==='resumo'){
+    host.appendChild(reflexaoCard(m));
+    const r=g(''); r.appendChild(panoramaCard()); host.appendChild(r);
+  }
+  if(modulo==='movimento'){
+    /* Entradas + Investimentos lado a lado: primeiro você se paga, depois gasta. */
+    const a=g('g2'); a.appendChild(entradasCard(m)); a.appendChild(investCard(m)); host.appendChild(a);
+    const b=g(''); b.appendChild(gastosCard(m)); host.appendChild(b);
+  }
+  if(modulo==='cartoes'){
+    /* Os dois lados do cartão: o que vence agora x o que estou criando agora */
+    const a=g('g2'); a.appendChild(cardsCard(m)); a.appendChild(usoCartaoCard(m)); host.appendChild(a);
+    const b=g(''); b.appendChild(parceladasCard(m)); host.appendChild(b);
+    const c=g(''); c.appendChild(panoramaCard()); host.appendChild(c);
+  }
+  if(modulo==='orcamento'){
+    const a=g(''); a.appendChild(budgetCard(m)); host.appendChild(a);
+  }
+}
+/* Sinal no menu: leva o olho para o que precisa de atenção. */
+function vmBadge(id,m){
+  if(id==='orcamento'){
+    const n=S.categories.filter(c=>{const t=+(S.budgets[c]||0);return t>0 && categoryReal(c,m)/t>=1;}).length;
+    return n? `<span class="mod-badge">${n}</span>` : '';
+  }
+  if(id==='cartoes'){
+    return faturasTotal(m)>0 ? `<span class="mod-dot" title="fatura a pagar"></span>` : '';
+  }
+  return '';
 }
 /* Data de hoje por extenso, curta */
 function vmHoje(){
