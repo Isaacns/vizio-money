@@ -9,9 +9,10 @@
    antigo depois de um deploy). Cache-first é ótimo para asset imutável
    e péssimo para app que muda toda hora. Invertido de propósito.
    ============================================================ */
-const CACHE = 'vizio-money-v0.8';
+const CACHE = 'vizio-money-v1.1';
 const ASSETS = [
   './', './index.html', './landing.html', './brand.css', './aura.js', './auth.js',
+  './termos.html', './privacidade.html',
   './brand/logo.svg', './manifest.webmanifest'
 ];
 
@@ -21,6 +22,13 @@ self.addEventListener('install', e => {
       .then(c => c.addAll(ASSETS).catch(() => {}))  // um asset faltando não derruba a instalação
       .then(() => self.skipWaiting())
   );
+});
+
+/* O app pede para a versão nova assumir agora, quando o usuário toca em
+   "atualizar". Sem isto, o SW novo ficaria em 'waiting' até todas as abas
+   fecharem — e num PWA de tela inicial isso pode não acontecer nunca. */
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'PULAR_ESPERA') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {

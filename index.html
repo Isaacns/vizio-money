@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=0.8">
+<link rel="stylesheet" href="brand.css?v=1.1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -65,6 +65,11 @@ input,select{font-family:inherit;font-size:16px}
 .vm-err{display:none;background:var(--neg-bg);border:1px solid rgba(240,97,109,.4);color:#F0616D;
   border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px;text-align:left}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--s600);font-size:16px;display:flex;align-items:center;justify-content:center}
+/* Selo de sincronização: no celular vira só o ícone (texto some) para não
+   brigar com o espaço da topbar. */
+.sync-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  color:var(--s500);white-space:nowrap;padding:0 2px}
+@media(max-width:640px){ .sync-chip .sync-tx{display:none} .sync-chip{font-size:14px} }
 
 .wrap{max-width:1080px;margin:0 auto;padding:18px 18px 120px}
 
@@ -389,7 +394,11 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
     </span>
   </a>
   <div class="right">
+    <!-- O cliente precisa VER que está salvo. Silêncio, num app de dinheiro,
+         o usuário lê como "será que perdi?". -->
+    <span id="syncChip" class="sync-chip" title="Só neste aparelho"><span>📱</span><span class="sync-tx">Só neste aparelho</span></span>
     <span id="planChip" class="plan-chip plan-free">Free</span>
+    <button class="icon-btn" id="btnAjuda" title="Como usar o VIZIO Money">❓</button>
     <button class="icon-btn" id="btnBase" title="Cadastros (cartões, categorias, orçamento)">⚙️</button>
     <button class="icon-btn" id="btnMenu" title="Conta">👤</button>
   </div>
@@ -519,7 +528,8 @@ const DEFAULTS = {
   budgets:{Moradia:100,Apartamento:3000,Assinaturas:100,'Saúde':200,'Alimentação':600,Lazer:100,Uber:50,Beleza:100,Roupas:100,Presentes:100,Essencial:300,'Contas de Casa':250,'Educação':100,Lanches:80,Imprevistos:150,Outros:50},
   months:{}, /* m -> {opening:null, incomes:[], investments:[], expenses:[]} */
   purchases:[], /* parceladas globais: {id,cat,desc,card,value,parcelas,start} */
-  hourlyWage:null /* R$/hora p/ custo de oportunidade; null = estimado da renda */
+  hourlyWage:null, /* R$/hora p/ custo de oportunidade; null = estimado da renda */
+  updatedAt:0      /* carimbo do cliente — decide quem vence no sync (last-write-wins) */
 };
 
 let S = load();
@@ -538,7 +548,13 @@ function migrate(r){
   r.version = 2;
   return r;
 }
-function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
+/* O localStorage virou CACHE. A fonte de verdade é a nuvem (vm_dados), senão
+   trocar de celular apaga a vida financeira do cliente — e aí os R$ 9,90
+   viram reembolso. vmNuvemAgendar vive no auth.js e ignora chamada sem login. */
+function save(){
+  localStorage.setItem(KEY, JSON.stringify(S));
+  if(window.vmNuvemAgendar) window.vmNuvemAgendar();
+}
 function month(m){ if(!S.months[m]) S.months[m]={opening:null,incomes:[],investments:[],expenses:[]}; return S.months[m]; }
 const cardNames   = () => S.cards.map(c=>c.nome);
 const getCard     = n  => S.cards.find(c=>c.nome===n);
@@ -855,10 +871,11 @@ function renderMonth(){
   host.appendChild(kpi);
 
   /* Abas de módulo: cada uma entrega 2–3 blocos em vez de 9 empilhados. */
-  const tabs=document.createElement('div'); tabs.className='mod-tabs';
+  const tabs=document.createElement('div'); tabs.className='mod-tabs'; tabs.id='modTabs';
   MODULOS.forEach(mo=>{
     const b=document.createElement('button');
     b.className='mod-tab'+(modulo===mo.id?' on':'');
+    b.dataset.mod=mo.id;   /* âncora estável para o tour guiado */
     b.innerHTML=`<span class="mod-ic">${mo.ic}</span><span>${mo.nome}</span>${vmBadge(mo.id,m)}`;
     b.onclick=()=>{ modulo=mo.id; render(); };
     tabs.appendChild(b);
@@ -1395,8 +1412,65 @@ function loadDemo(){
 document.getElementById('btnBase').onclick=()=>{view=view==='base'?'month':'base';render();};
 document.getElementById('btnMenu').onclick=()=>{ if(isPro()){if(confirm('Voltar para o plano Free? (teste)')){S.plan='free';render();}} else paywall('Assine o VIZIO Money Pro'); };
 
-/* PWA */
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+/* ============================================================
+   PWA — instalação e ATUALIZAÇÃO
+
+   O problema que isto resolve (aparece só no celular):
+   com o atalho na tela inicial, o app quase nunca "abre do zero" — você volta
+   pelo alternador e ele apenas retoma da memória. Sem navegação, o service
+   worker nunca procura versão nova, e o usuário roda código velho por dias
+   sem saber. Registrar e esquecer não basta.
+
+   Então: toda vez que o app volta ao foco, ele pergunta se há versão nova.
+   Se houver, avisa e deixa o usuário decidir a hora — recarregar sozinho no
+   meio de um lançamento seria pior que a versão antiga.
+   ============================================================ */
+if('serviceWorker' in navigator){
+  let vmReg = null, vmAvisou = false;
+
+  const avisarNovaVersao = () => {
+    if(vmAvisou) return; vmAvisou = true;
+    const b = document.createElement('button');
+    b.className = 'vm-update';
+    b.innerHTML = '✨ Nova versão do VIZIO Money — <b>tocar para atualizar</b>';
+    b.onclick = () => {
+      /* pede ao SW novo para assumir agora; o controllerchange recarrega */
+      vmReg?.waiting?.postMessage({ type:'PULAR_ESPERA' });
+      b.textContent = 'Atualizando…'; b.disabled = true;
+      setTimeout(()=>location.reload(), 1200);   // rede de segurança
+    };
+    document.body.appendChild(b);
+    requestAnimationFrame(()=> b.classList.add('on'));
+  };
+
+  window.addEventListener('load', async ()=>{
+    try{
+      vmReg = await navigator.serviceWorker.register('sw.js');
+
+      /* Já tem versão nova parada esperando (instalou numa visita anterior) */
+      if(vmReg.waiting && navigator.serviceWorker.controller) avisarNovaVersao();
+
+      vmReg.addEventListener('updatefound', ()=>{
+        const novo = vmReg.installing; if(!novo) return;
+        novo.addEventListener('statechange', ()=>{
+          /* 'installed' + já existe controller = é ATUALIZAÇÃO, não 1ª instalação */
+          if(novo.state === 'installed' && navigator.serviceWorker.controller) avisarNovaVersao();
+        });
+      });
+
+      /* O gatilho que faltava: procurar versão nova ao voltar para o app. */
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState === 'visible') vmReg?.update().catch(()=>{});
+      });
+      window.addEventListener('online', ()=> vmReg?.update().catch(()=>{}));
+    }catch(e){ /* sem SW o app funciona igual, só perde o modo offline */ }
+  });
+
+  let recarregando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(recarregando) return; recarregando = true; location.reload();
+  });
+}
 
 render();
 </script>
@@ -1408,6 +1482,6 @@ render();
 
 <!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="auth.js?v=0.8"></script>
+<script src="auth.js?v=1.1"></script>
 </body>
 </html>

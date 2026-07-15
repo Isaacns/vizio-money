@@ -121,6 +121,38 @@
 .brand-word b{font-weight:800;background:var(--grad-money);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .brand-badge{font-family:var(--font);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
 
+/* Aviso de versão nova: entra por baixo, acima da barra inferior e da área
+   segura do iPhone. Azul (ação), não ouro — ouro é do dinheiro. */
+.vm-update{position:fixed;left:12px;right:12px;z-index:70;border:none;cursor:pointer;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  background:var(--grad-brand);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;
+  padding:13px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(28,100,240,.45);
+  transform:translateY(140%);transition:transform .35s cubic-bezier(.2,.9,.3,1);min-height:46px}
+.vm-update.on{transform:translateY(0)}
+.vm-update:disabled{opacity:.7}
+@media(max-width:820px){ .vm-update{bottom:calc(70px + env(safe-area-inset-bottom))} } /* acima da bottom nav */
+@media(min-width:821px){ .vm-update{left:auto;right:20px;max-width:380px} }
+@media (prefers-reduced-motion: reduce){ .vm-update{transition:none} }
+
+/* Puxar para atualizar: o indicador nasce escondido acima da dobra e desce
+   junto com o dedo. Ouro só quando já passou do limite — o sinal de que
+   soltar agora vai valer. */
+.vm-ptr{position:fixed;top:-46px;left:50%;transform:translateX(-50%);z-index:60;
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--night);border:1px solid var(--line2);color:var(--s500);
+  box-shadow:0 6px 20px rgba(0,0,0,.5);opacity:0;pointer-events:none;
+  transition:opacity .18s ease, background .18s ease, color .18s ease, border-color .18s ease}
+.vm-ptr.on{opacity:1}
+.vm-ptr.pronto{color:var(--gold-2);border-color:rgba(201,169,104,.55);background:var(--coal)}
+.vm-ptr-ic{font-size:17px;line-height:1;display:block}
+.vm-ptr.girando .vm-ptr-ic{animation:vmSpin .8s linear infinite}
+.vm-ptr.girando{transition:transform .2s ease, opacity .18s ease}
+@media (prefers-reduced-motion: reduce){ .vm-ptr.girando .vm-ptr-ic{animation:none} }
+
+/* Links legais: presentes e acessíveis, sem competir com a ação principal. */
+.lk-legal{color:var(--s500);text-decoration:underline;text-underline-offset:2px}
+.lk-legal:hover{color:var(--brand-2)}
+
 /* Convite de cortesia: a promessa aparece ANTES do formulário — senão criar
    conta parece só burocracia. Ouro porque é valor recebido. */
 .vm-convite{background:var(--gold-soft);border:1px solid rgba(201,169,104,.42);color:var(--gold-2);

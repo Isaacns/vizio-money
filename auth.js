@@ -65,6 +65,185 @@ async function vmCarregarSessao(){
 
 async function vmRefreshPlan(){ await vmCarregarSessao(); vmChrome(); render(); }
 
+/* ================= SINCRONIZAÇÃO NA NUVEM =================
+   Regra de resolução: last-write-wins pelo carimbo do CLIENTE (S.updatedAt).
+   Documento inteiro, não campo a campo — os dados são pequenos e sempre lidos
+   juntos; merge por campo daria complexidade sem ganho para uso pessoal.
+
+   A trava que evita perder dado: o PUSH só liga depois que o PULL termina.
+   Sem isso, um PC com cópia velha abriria, o usuário digitaria qualquer coisa,
+   o carimbo local viraria "agora" e ele empurraria a versão velha por cima do
+   que foi lançado no celular. Puxar antes de poder empurrar mata essa classe
+   inteira de bug.
+
+   Falha aberta: sem rede, o app continua 100% usável no cache local e
+   sincroniza quando voltar. Nunca travar o usuário fora do que é dele. */
+const VM_SYNC_DEBOUNCE = 2500;
+let _vmSyncTimer = null, _vmUltimoPayload = null, _vmPushLiberado = false;
+
+/* plan vem do gating (servidor) e updatedAt é metadado — nenhum dos dois viaja. */
+const vmPayload = () => { const { plan, updatedAt, ...resto } = S; return resto; };
+
+function vmSyncChip(estado){
+  const el = document.getElementById('syncChip'); if(!el) return;
+  const mapa = {
+    salvando: ['⏳','Salvando…','var(--s500)'],
+    ok:       ['☁️','Salvo na nuvem','var(--pos)'],
+    erro:     ['⚠️','Salvo só aqui','var(--warn)'],
+    local:    ['📱','Só neste aparelho','var(--s500)']
+  };
+  const [ic,txt,cor] = mapa[estado] || mapa.local;
+  el.innerHTML = `<span>${ic}</span><span class="sync-tx">${txt}</span>`;
+  el.style.color = cor;
+  el.title = estado==='erro'
+    ? 'Não consegui falar com a nuvem agora. Seus dados estão salvos neste aparelho e sobem sozinhos quando a conexão voltar.'
+    : estado==='local' ? 'Entre na sua conta para levar seus dados para outros aparelhos.' : txt;
+}
+
+function vmNuvemAgendar(){
+  if(!_vmPushLiberado || !VM.user) return;
+  const j = JSON.stringify(vmPayload());
+  if(j === _vmUltimoPayload) return;   // render não é mudança de dado
+  _vmUltimoPayload = j;
+  S.updatedAt = Date.now();
+  localStorage.setItem(KEY, JSON.stringify(S));
+  vmSyncChip('salvando');
+  clearTimeout(_vmSyncTimer);
+  _vmSyncTimer = setTimeout(vmNuvemEmpurrar, VM_SYNC_DEBOUNCE);
+}
+window.vmNuvemAgendar = vmNuvemAgendar;
+
+async function vmNuvemEmpurrar(){
+  if(!VM.user) return;
+  try{
+    const { error } = await vmdb.from('vm_dados').upsert({
+      user_id: VM.user.id,
+      dados: vmPayload(),
+      client_ts: S.updatedAt || Date.now(),
+      device: (navigator.userAgent||'').slice(0,120),
+      updated_at: new Date().toISOString()
+    }, { onConflict:'user_id' });
+    if(error) throw error;
+    vmSyncChip('ok');
+  }catch(e){
+    console.warn('VIZIO Money · sync ↑:', e.message);
+    vmSyncChip('erro');
+    _vmUltimoPayload = null;   // não perde a mudança: tenta de novo no próximo save
+  }
+}
+
+/* Puxa de novo quando a janela volta ao foco.
+   Cenário real que isto mata: atalho aberto no PC, lançamento feito no celular,
+   você volta ao PC e digita — o carimbo do PC vira "agora" e ele empurraria a
+   cópia velha por cima do celular. Puxar ANTES de você tocar em qualquer coisa
+   fecha a janela onde esse estrago acontece. */
+let _vmUltimoPull = 0;
+async function vmNuvemPuxarSeVelho(minMs = 4000){
+  if(!VM.user) return;
+  if(Date.now() - _vmUltimoPull < minMs) return;   // não martela o banco
+  await vmNuvemPuxar();
+}
+
+async function vmNuvemPuxar(){
+  if(!VM.user){ _vmPushLiberado = false; vmSyncChip('local'); return; }
+  _vmUltimoPull = Date.now();
+  try{
+    const { data, error } = await vmdb.from('vm_dados')
+      .select('dados, client_ts').eq('user_id', VM.user.id).maybeSingle();
+    if(error) throw error;
+
+    const tsLocal  = +(S.updatedAt || 0);
+    const tsNuvem  = +(data?.client_ts || 0);
+
+    if(data && tsNuvem > tsLocal){
+      /* Nuvem mais nova: adota. Mutação no lugar (não reatribuo S) para não
+         quebrar as referências que o resto do app já segura. */
+      const planoAtual = S.plan;
+      const novo = migrate({ ...structuredClone(DEFAULTS), ...data.dados });
+      Object.keys(S).forEach(k => delete S[k]);
+      Object.assign(S, novo);
+      S.plan = planoAtual;          // quem manda no plano é o gating
+      S.updatedAt = tsNuvem;
+      localStorage.setItem(KEY, JSON.stringify(S));
+      _vmUltimoPayload = JSON.stringify(vmPayload());
+      _vmPushLiberado = true;
+      vmSyncChip('ok');
+      render();
+      return;
+    }
+
+    _vmPushLiberado = true;
+    if(!data || tsLocal > tsNuvem){ _vmUltimoPayload = null; vmNuvemAgendar(); }
+    else vmSyncChip('ok');
+  }catch(e){
+    console.warn('VIZIO Money · sync ↓:', e.message);
+    vmSyncChip('erro');
+    _vmPushLiberado = false;   // não puxei: não tenho direito de empurrar
+  }
+}
+
+/* ================= PUXAR PARA ATUALIZAR =================
+   O gesto que todo mundo já tem no dedo. Só dispara quando a página já está
+   no topo e o dedo desce — senão brigaria com a rolagem normal da lista.
+   No desktop, o mesmo trabalho é feito clicando no selo ☁️ da topbar. */
+function vmLigarPuxarAtualizar(){
+  if(!('ontouchstart' in window)) return;
+  const el = document.createElement('div');
+  el.className = 'vm-ptr'; el.innerHTML = '<span class="vm-ptr-ic">↻</span>';
+  document.body.appendChild(el);
+
+  const LIMITE = 70;          // px para valer como intenção, não tremida
+  let y0 = null, dist = 0, ativo = false;
+
+  addEventListener('touchstart', e=>{
+    if(window.scrollY > 0 || document.querySelector('.overlay')) { y0=null; return; }
+    y0 = e.touches[0].clientY; dist = 0;
+  }, { passive:true });
+
+  addEventListener('touchmove', e=>{
+    if(y0===null || ativo) return;
+    dist = e.touches[0].clientY - y0;
+    if(dist <= 0){ el.style.transform=''; el.classList.remove('on'); return; }
+    const puxada = Math.min(dist * .5, 86);
+    el.style.transform = `translateX(-50%) translateY(${puxada}px) rotate(${dist*2}deg)`;
+    el.classList.toggle('pronto', dist >= LIMITE);
+    el.classList.add('on');
+  }, { passive:true });
+
+  addEventListener('touchend', async ()=>{
+    if(y0===null || ativo) return;
+    const valeu = dist >= LIMITE;
+    y0 = null;
+    if(!valeu){ el.style.transform=''; el.classList.remove('on','pronto'); return; }
+
+    ativo = true;
+    el.classList.add('girando');
+    el.style.transform = 'translateX(-50%) translateY(58px)';
+    /* Sobe o que estiver pendente ANTES de puxar — senão o pull adotaria a
+       nuvem e apagaria o que você acabou de digitar aqui. */
+    if(_vmSyncTimer){ clearTimeout(_vmSyncTimer); _vmSyncTimer=null; await vmNuvemEmpurrar(); }
+    await vmNuvemPuxar();
+    toast(VM.user ? 'Atualizado ☁️' : 'Entre na conta para sincronizar');
+    el.classList.remove('on','pronto','girando');
+    el.style.transform = '';
+    ativo = false;
+  });
+}
+
+/* Selo de sync clicável: no desktop não existe gesto de puxar, e ninguém
+   deveria fechar e reabrir o app só para conferir se está atualizado. */
+function vmLigarChipSync(){
+  const chip = document.getElementById('syncChip'); if(!chip) return;
+  chip.style.cursor = 'pointer';
+  chip.onclick = async ()=>{
+    if(!VM.user){ vmAccount(); return; }
+    vmSyncChip('salvando');
+    if(_vmSyncTimer){ clearTimeout(_vmSyncTimer); _vmSyncTimer=null; await vmNuvemEmpurrar(); }
+    await vmNuvemPuxar();
+    toast('Atualizado ☁️');
+  };
+}
+
 /* ================= convite de cortesia =================
    Link: .../index.html?convite=CODIGO
    Quem chega sem conta vê a tela de criar conta com o convite já reconhecido —
@@ -217,7 +396,7 @@ function vmAccount(){
       ${vmTab==='criar' ? 'Criar minha conta' : 'Entrar'}</button>
 
     ${vmTab==='entrar' ? `<button type="button" class="linklike" id="vm-forgot">Esqueci minha senha</button>` : ``}
-    <p class="budmeta" style="margin-top:8px">Entrar é preciso só para assinar e levar seus dados de aparelho. Seus lançamentos ficam salvos neste dispositivo.</p>
+    <p class="budmeta" style="margin-top:8px">Com a conta, seus lançamentos ficam salvos na nuvem e te acompanham em qualquer aparelho. Ao criar, você aceita os <a href="termos.html" target="_blank" class="lk-legal">Termos</a> e a <a href="privacidade.html" target="_blank" class="lk-legal">Privacidade</a>.</p>
     <button type="button" class="linklike" id="vm-close">Fechar</button>
   </form></div>`;
 
@@ -244,12 +423,23 @@ function vmAccount(){
       if(vmTab==='criar'){
         if(pass.length<8){ err('A senha precisa de pelo menos 8 caracteres.'); return; }
         const nome=document.getElementById('vm-nome').value.trim();
-        const { error } = await vmdb.auth.signUp({ email, password:pass,
-          options:{ data:{ nome }, emailRedirectTo: location.href.split('#')[0] } });
+
+        /* Cadastro pelo vm-criar-conta, e não pelo auth.signUp: o projeto
+           vizio-core tem "Signups" desligado de propósito (os outros produtos
+           criam usuário por admin, e há policies permissivas que vazariam a
+           carteira de clientes da INPERSON se o cadastro global fosse aberto).
+           Esta rota cria só usuário do Money, sem tocar naquilo. */
+        const resp = await fetch(`${VM_SUPABASE_URL}/functions/v1/vm-criar-conta`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'apikey': VM_SUPABASE_KEY },
+          body: JSON.stringify({ nome, email, senha: pass })
+        });
+        const j = await resp.json().catch(()=>({}));
+        if(!resp.ok || !j.ok) throw new Error(j.erro || 'Não consegui criar sua conta.');
+
+        /* Conta nasce confirmada — entra direto, sem etapa de e-mail. */
+        const { error } = await vmdb.auth.signInWithPassword({ email, password:pass });
         if(error) throw error;
-        const { data:{ session } } = await vmdb.auth.getSession();
-        if(!session){ toast('Conta criada! Confirme o e-mail para entrar ✉️'); r.innerHTML=''; return; }
-        if(nome) await vmdb.from('vm_perfis').update({ nome }).eq('user_id', session.user.id);
       } else {
         const { error } = await vmdb.auth.signInWithPassword({ email, password:pass });
         if(error) throw error;
@@ -260,8 +450,10 @@ function vmAccount(){
     }catch(e){
       const m=(e.message||'').toLowerCase();
       err(m.includes('invalid login') ? 'E-mail ou senha incorretos.'
-        : m.includes('already registered') ? 'Esse e-mail já tem conta. Use Entrar.'
+        : m.includes('already') || m.includes('registered') ? 'Esse e-mail já tem conta. Use "Entrar".'
         : m.includes('email not confirmed') ? 'Confirme seu e-mail antes de entrar.'
+        : m.includes('signups not allowed') ? 'Cadastro temporariamente indisponível. Já estamos vendo isso.'
+        : m.includes('muitas tentativas') ? e.message
         : e.message || 'Não consegui completar. Tente de novo.');
     }finally{
       const g=document.getElementById('vm-go');
@@ -292,12 +484,19 @@ function vmMinhaConta(){
         ? (VM.source==='cortesia'
             ? `<p class="budmeta">Acesso <b>cortesia (isento)</b> — não é assinatura paga e não entra no faturamento.</p>`
             : `<p class="budmeta">Assinatura ativa. Obrigado por apoiar o VIZIO Money.</p>
+               <button class="btn btn-ghost" id="vm-portal" style="width:100%;margin-top:8px">Gerenciar assinatura · cancelar</button>
                <button class="btn btn-ghost" id="vm-sync" style="width:100%;margin-top:8px">Atualizar meu plano</button>`)
         : `<div class="price">R$ 9,90<small>/mês</small></div>
            <button class="btn btn-money" id="vm-sub" style="width:100%">Assinar o Pro</button>
            <button class="btn btn-ghost" id="vm-sync" style="width:100%;margin-top:8px">Já paguei — atualizar</button>`}
 
     <button class="btn btn-ghost" id="vm-pass" style="width:100%;margin-top:8px">Definir / trocar senha</button>
+    <div class="budmeta" style="margin-top:12px;line-height:1.6">
+      ☁️ Seus dados sobem para a nuvem e te acompanham em qualquer aparelho.<br>
+      <a href="termos.html" target="_blank" class="lk-legal">Termos de Uso</a> ·
+      <a href="privacidade.html" target="_blank" class="lk-legal">Privacidade</a> ·
+      <a href="manual.html" target="_blank" class="lk-legal">Manual</a>
+    </div>
     <button class="linklike" id="vm-out">Sair</button>
     <button class="linklike" id="vm-close">Fechar</button>
   </div></div>`;
@@ -310,6 +509,29 @@ function vmMinhaConta(){
   if(sub) sub.onclick=()=>{ window.open(vmSubscribeUrl(),'_blank','noopener'); toast('Finalize o pagamento na aba aberta'); };
   const sync=document.getElementById('vm-sync');
   if(sync) sync.onclick=async()=>{ toast('Verificando…'); await vmRefreshPlan(); vmMinhaConta(); };
+
+  /* Portal do Stripe: cancelar, trocar cartão, baixar recibo — sem falar comigo.
+     Cancelar tem que ser tão fácil quanto assinar (CDC). */
+  const portal=document.getElementById('vm-portal');
+  if(portal) portal.onclick=async()=>{
+    portal.disabled=true; portal.textContent='Abrindo…';
+    try{
+      const { data:{ session } } = await vmdb.auth.getSession();
+      const r = await fetch(`${VM_SUPABASE_URL}/functions/v1/vm-portal-cobranca`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json',
+                  'Authorization':`Bearer ${session?.access_token||''}`,
+                  'apikey': VM_SUPABASE_KEY },
+        body: JSON.stringify({ return_url: location.origin + '/' })
+      });
+      const j = await r.json();
+      if(j.url) location.href = j.url;
+      else { toast(j.erro || 'Não consegui abrir o portal'); portal.disabled=false; portal.textContent='Gerenciar assinatura · cancelar'; }
+    }catch(e){
+      toast('Falha de conexão. Tente de novo.');
+      portal.disabled=false; portal.textContent='Gerenciar assinatura · cancelar';
+    }
+  };
   document.getElementById('vm-out').onclick=async()=>{
     await vmdb.auth.signOut(); await vmRefreshPlan(); r.innerHTML=''; toast('Você saiu');
   };
@@ -399,15 +621,34 @@ window.paywall = function(reason){
   catch(e){ console.warn('VIZIO Money · acesso:', e.message); }  // falha aberta
   vmChrome(); render();
 
+  /* Puxa ANTES de liberar qualquer escrita — a trava contra sobrescrever
+     a nuvem com uma cópia velha deste aparelho. */
+  await vmNuvemPuxar();
+
   if(ehRecovery && VM.user){ vmDefinirSenha(false); }
 
   vmdb.auth.onAuthStateChange(async (evt)=>{
     if(evt==='SIGNED_IN' || evt==='SIGNED_OUT' || evt==='TOKEN_REFRESHED') await vmRefreshPlan();
-    if(evt==='SIGNED_IN') await vmTentarConvite();   // acabou de criar conta pelo link
+    if(evt==='SIGNED_IN'){ await vmNuvemPuxar(); await vmTentarConvite(); }
+    if(evt==='SIGNED_OUT'){ _vmPushLiberado=false; _vmUltimoPayload=null; vmSyncChip('local'); }
     if(evt==='PASSWORD_RECOVERY') vmDefinirSenha(false);
   });
 
   await vmTentarConvite();   // já estava logado e abriu o link
+
+  /* Saindo: o que estiver na fila sobe AGORA — o debounce de 2,5s não pode
+     custar o último lançamento. Voltando: puxa antes que você toque em nada. */
+  addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden'){
+      if(_vmSyncTimer){ clearTimeout(_vmSyncTimer); _vmSyncTimer=null; vmNuvemEmpurrar(); }
+    } else {
+      vmNuvemPuxarSeVelho();
+    }
+  });
+  addEventListener('online', ()=> vmNuvemPuxarSeVelho(0));
+
+  vmLigarPuxarAtualizar();
+  vmLigarChipSync();
 
   if(location.search.includes('assinar=1') && S.plan!=='pro'){
     VM.user ? window.paywall() : vmAccount();
