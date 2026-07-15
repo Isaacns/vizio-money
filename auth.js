@@ -65,6 +65,54 @@ async function vmCarregarSessao(){
 
 async function vmRefreshPlan(){ await vmCarregarSessao(); vmChrome(); render(); }
 
+/* ================= convite de cortesia =================
+   Link: .../index.html?convite=CODIGO
+   Quem chega sem conta vê a tela de criar conta com o convite já reconhecido —
+   a promessa aparece ANTES do formulário, senão o cadastro parece só burocracia.
+   O código fica guardado até o login concluir (o convite não pode morrer no
+   caminho de "criar conta > confirmar e-mail > voltar").
+   O resgate em si é no servidor: front nenhum decide quem é Pro. */
+const VM_CONVITE_KEY = 'vm_convite_pendente';
+const vmConviteDaUrl = () =>
+  (new URLSearchParams(location.search).get('convite') || '').trim().toUpperCase();
+
+function vmConvitePendente(){
+  const daUrl = vmConviteDaUrl();
+  if(daUrl){ try{ localStorage.setItem(VM_CONVITE_KEY, daUrl); }catch(e){} return daUrl; }
+  try{ return localStorage.getItem(VM_CONVITE_KEY) || ''; }catch(e){ return ''; }
+}
+function vmLimparConvite(){ try{ localStorage.removeItem(VM_CONVITE_KEY); }catch(e){} }
+
+async function vmTentarConvite(){
+  const cod = vmConvitePendente();
+  if(!cod) return;
+  if(!VM.user){ vmAccount(); return; }           // precisa de conta: abre o acesso
+  if(VM.admin){ vmLimparConvite(); return; }     // master não gasta vaga
+
+  try{
+    const { data:{ session } } = await vmdb.auth.getSession();
+    const r = await fetch(`${VM_SUPABASE_URL}/functions/v1/vm-resgatar-convite`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json',
+                'Authorization':`Bearer ${session?.access_token||''}`,
+                'apikey': VM_SUPABASE_KEY },
+      body: JSON.stringify({ codigo: cod })
+    });
+    const j = await r.json();
+    if(j.ok){ vmLimparConvite(); await vmRefreshPlan(); toast(j.msg || 'Pro liberado 🎁'); }
+    else { vmLimparConvite(); toast(j.erro || 'Convite não pôde ser usado'); }
+  }catch(e){
+    /* falha aberta: rede ruim não queima o convite — ele tenta de novo depois */
+    console.warn('VIZIO Money · convite:', e.message);
+  }finally{
+    /* tira o ?convite= da barra: link compartilhado não vira histórico do convidado */
+    if(vmConviteDaUrl()){
+      const u = new URL(location.href); u.searchParams.delete('convite');
+      history.replaceState({}, '', u.toString());
+    }
+  }
+}
+
 const vmSubscribeUrl = () => VM.user
   ? `${VM_STRIPE_LINK}?client_reference_id=${VM.user.id}&prefilled_email=${encodeURIComponent(VM.user.email||'')}`
   : VM_STRIPE_LINK;
@@ -149,6 +197,10 @@ function vmAccount(){
       <button type="button" class="vm-tab ${vmTab==='criar'?'on':''}" data-t="criar">Criar conta</button>
     </div>
     <div class="vm-err" id="vm-err"></div>
+
+    ${vmConvitePendente() ? `
+      <div class="vm-convite">🎁 <b>Convite reconhecido.</b>
+        Crie sua conta e o <b>Pro</b> entra liberado como cortesia — sem cartão.</div>` : ``}
 
     ${vmTab==='criar' ? `
       <div class="vm-field"><label for="vm-nome">Nome</label>
@@ -351,8 +403,11 @@ window.paywall = function(reason){
 
   vmdb.auth.onAuthStateChange(async (evt)=>{
     if(evt==='SIGNED_IN' || evt==='SIGNED_OUT' || evt==='TOKEN_REFRESHED') await vmRefreshPlan();
+    if(evt==='SIGNED_IN') await vmTentarConvite();   // acabou de criar conta pelo link
     if(evt==='PASSWORD_RECOVERY') vmDefinirSenha(false);
   });
+
+  await vmTentarConvite();   // já estava logado e abriu o link
 
   if(location.search.includes('assinar=1') && S.plan!=='pro'){
     VM.user ? window.paywall() : vmAccount();

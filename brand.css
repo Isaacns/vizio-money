@@ -59,21 +59,28 @@
 }
 
 /* ==========================================================================
-   MARCA VIVA — padrão canônico VIZIO (PADRAO-AURA-v3 §3 + studio/*.html)
-   A marca NUNCA fica parada. Quatro camadas, iguais em todo o ecossistema:
-     floaty    6s   — o símbolo flutua (movimento)
-     pulseLogo 3.4s — respiração/batimento com o halo acompanhando
-     halo      3.4s — o ar em volta, em fase com o batimento
-     spin      4.6s — anel cônico girando (só no hero/login)
-   O halo é GERADO no CSS, nunca embutido no arquivo — assim acompanha o
-   tamanho e o tema. Aqui o halo é bicolor: azul VIZIO + ouro FINANCE.
-   prefers-reduced-motion: mantém a luz, remove o movimento (regra da AURA).
+   MARCA VIVA — PADRÃO CANÔNICO VIZIO/INPERSON  ·  NÃO CUSTOMIZAR
+   Fonte da verdade: studio/cadastro.html (+ PADRAO-AURA-v3 §3).
+   Estes quatro keyframes são IDÊNTICOS em todo o ecossistema — Money,
+   Financiamento, Consórcio, Studio, INPERSON. A marca respira do mesmo jeito
+   em todo lugar; é isso que faz o conjunto parecer uma empresa só.
+
+     floaty    6s   translateY(-9px)            — o símbolo flutua
+     pulseLogo 3.4s scale(1.07) + drop-shadow   — respiração / batimento
+     halo      3.4s opacity .45→.9, scale 1.08  — o ar em volta, em fase
+     spin      4.6s conic-gradient azul         — anel girando (hero/login)
+
+   REGRA: a animação da marca é SEMPRE azul VIZIO. O ouro é do dinheiro
+   (saldo, patrimônio, valores) — nunca do movimento da marca. Já erramos
+   isso aqui uma vez: ouro no anel, no halo e no batimento. Corrigido.
+   O halo é GERADO no CSS, nunca embutido no arquivo.
+   prefers-reduced-motion: mantém a luz, remove o movimento.
    ========================================================================== */
-@keyframes vmFloaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes vmFloaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 @keyframes vmPulseLogo{
-  0%,100%{transform:scale(1);   filter:drop-shadow(0 3px 10px rgba(28,100,240,.30))}
-  50%    {transform:scale(1.07);filter:drop-shadow(0 5px 16px rgba(60,148,252,.55)) drop-shadow(0 0 14px rgba(201,169,104,.35))}}
-@keyframes vmHalo{0%,100%{opacity:.42;transform:scale(1)}50%{opacity:.9;transform:scale(1.08)}}
+  0%,100%{transform:scale(1);   filter:drop-shadow(0 4px 12px rgba(28,100,240,.28))}
+  50%    {transform:scale(1.07);filter:drop-shadow(0 6px 18px rgba(60,148,252,.5))}}
+@keyframes vmHalo{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.9;transform:scale(1.08)}}
 @keyframes vmSpin{to{transform:rotate(360deg)}}
 
 /* ---- Lockup de marca ---- */
@@ -81,9 +88,9 @@
 .brand-mark{width:34px;height:34px;border-radius:9px;background:transparent;border:none;
   display:flex;align-items:center;justify-content:center;position:relative;
   animation:vmFloaty 6s ease-in-out infinite}
-/* o ar em volta do símbolo, respirando em fase com o batimento */
+/* o ar em volta do símbolo, respirando em fase com o batimento (azul canônico) */
 .brand-mark::after{content:"";position:absolute;inset:-7px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,rgba(60,148,252,.30),rgba(201,169,104,.10) 55%,transparent 70%);
+  background:radial-gradient(circle,rgba(60,148,252,.28),transparent 68%);
   filter:blur(8px);animation:vmHalo 3.4s ease-in-out infinite;z-index:0}
 .brand-mark svg,.brand-mark img{display:block;position:relative;z-index:1;
   animation:vmPulseLogo 3.4s ease-in-out infinite}
@@ -91,12 +98,13 @@
 /* ---- Símbolo grande com anel (login, hero) ---- */
 .vm-ring{width:118px;height:118px;margin:0 auto 16px;position:relative;display:grid;place-items:center;
   animation:vmFloaty 6s ease-in-out infinite}
+/* anel cônico CANÔNICO — exatamente o do studio/cadastro.html (azul puro) */
 .vm-ring::before{content:"";position:absolute;inset:0;border-radius:50%;padding:3px;
-  background:conic-gradient(from 0deg,#5AA0FF,#1C64F0,#C9A968,#1450C8,#5AA0FF);
+  background:conic-gradient(from 0deg,#5AA0FF,#1C64F0,#3C94FC,#1450C8,#5AA0FF);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;animation:vmSpin 4.6s linear infinite}
 .vm-ring::after{content:"";position:absolute;inset:-6px;border-radius:50%;
-  background:radial-gradient(circle,rgba(60,148,252,.28),rgba(201,169,104,.12) 55%,transparent 68%);
+  background:radial-gradient(circle,rgba(60,148,252,.28),transparent 68%);
   filter:blur(9px);animation:vmHalo 3.4s ease-in-out infinite}
 .vm-core{width:92px;height:92px;border-radius:50%;background:var(--night);display:grid;place-items:center;
   position:relative;z-index:2;box-shadow:inset 0 0 0 1px var(--line),0 8px 26px rgba(0,0,0,.5)}
@@ -112,6 +120,12 @@
 /* "Money" recebe o metal azul->ouro do símbolo */
 .brand-word b{font-weight:800;background:var(--grad-money);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .brand-badge{font-family:var(--font);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+
+/* Convite de cortesia: a promessa aparece ANTES do formulário — senão criar
+   conta parece só burocracia. Ouro porque é valor recebido. */
+.vm-convite{background:var(--gold-soft);border:1px solid rgba(201,169,104,.42);color:var(--gold-2);
+  border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-bottom:12px;text-align:left}
+.vm-convite b{color:var(--gold-2)}
 
 /* ---- AURA: conteúdo sempre acima da luz (regra do padrão v3) ---- */
 .topbar,.wrap,.overlay,.toast{position:relative;z-index:1}

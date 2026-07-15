@@ -11,11 +11,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=0.7">
+<link rel="stylesheet" href="brand.css?v=0.8">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+/* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
+   de propósito — `hidden` cria um contêiner de rolagem e quebra o position:sticky
+   da topbar e da faixa de meses. As causas do estouro estão corrigidas abaixo
+   (tabelas, panorama, faixa de meses); isto aqui é o cinto de segurança. */
+html{overflow-x:clip;max-width:100%}
 /* A luz da página vem do MODO AURA v3 (aura.js) — não de gradientes locais. */
-body{font-family:var(--font);color:var(--s600);background:var(--bg);-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);color:var(--s600);background:var(--bg);-webkit-tap-highlight-color:transparent;overflow-x:clip}
 h1,h2,h3,.disp{font-family:var(--font-display);color:var(--ink);letter-spacing:-.02em;line-height:1.15}
 .num{font-variant-numeric:tabular-nums lining-nums}
 button{font-family:inherit;cursor:pointer}
@@ -107,6 +112,14 @@ tr:last-child td{border-bottom:none}
 .addrow input,.addrow select{padding:9px 11px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0}
 .addrow input[type=date]{color:var(--s600)}
 .addrow .f-desc{flex:2;min-width:120px} .addrow .f-num{width:110px} .addrow .f-sel{flex:1;min-width:110px} .addrow .f-sm{width:90px}
+
+/* Campo de data mascarado + calendário nativo escondido atrás do 📅 */
+.dt-wrap{position:relative;display:inline-flex;align-items:center;width:118px;flex:0 0 auto}
+.dt-wrap input.date{width:100%;padding-right:32px !important;font-variant-numeric:tabular-nums}
+.dt-native{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;bottom:0;left:12px;border:0;padding:0}
+.dt-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;
+  font-size:14px;line-height:1;padding:4px;border-radius:6px;color:var(--s500);cursor:pointer}
+.dt-btn:hover{background:var(--s100)}
 .btn{border:none;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13px;color:#fff;background:var(--grad-brand);box-shadow:var(--sh-sm)}
 .btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
 .btn-ghost{background:transparent;color:var(--brand-2);border:1px solid var(--line2)}
@@ -284,11 +297,19 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   .linklike{min-height:44px;padding:10px}
 }
 
-/* 3. Faixa dos meses fixa logo abaixo da topbar: trocar de mês é a ação nº1 */
+/* 3. Faixa dos meses fixa logo abaixo da topbar: trocar de mês é a ação nº1.
+   No celular ela deixa de ser carrossel e vira grade 6x2: o ano inteiro à vista,
+   sem rolagem lateral e sem precisar caçar Dezembro arrastando o dedo. */
 @media(max-width:820px){
   .monthstrip{position:sticky;top:calc(58px + env(safe-area-inset-top));z-index:30;
     background:rgba(6,8,15,.9);backdrop-filter:blur(10px);
     margin:0 -18px;padding:10px 18px;border-bottom:1px solid var(--line)}
+}
+@media(max-width:560px){
+  .monthstrip{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;overflow:visible;padding:9px 14px}
+  .mbtn{flex:none;padding:9px 2px;font-size:12px;text-align:center;min-height:40px;
+    display:flex;align-items:center;justify-content:center;gap:2px}
+  .mbtn .lk{font-size:8px;margin-left:1px}
 }
 
 /* 4. Formulários empilhados: no celular, campo lado a lado vira campo espremido */
@@ -309,22 +330,43 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   .kpi .lab{font-size:10.5px}
 }
 
-/* 6. Tabelas: apertar sem cortar */
+/* 6. Tabela vira LISTA no celular — e a página para de andar de lado.
+   Diagnóstico: tabela de 5 colunas não cabe em 360px. Pior, o próprio acerto de
+   acessibilidade criou o bug: o ✕ ganhou alvo de toque de 44px e, somado às
+   colunas fixas (data + pgto + valor), estourou a viewport e passou a empurrar
+   a página inteira para o lado. Apertar fonte e padding só adiava o problema.
+   Lista empilhada é o padrão dos apps financeiros no celular por um motivo:
+   cada lançamento vira um bloco legível e a leitura só desce. */
 @media(max-width:560px){
-  table{font-size:12.5px}
-  th,td{padding:7px 4px}
-  th{font-size:9.5px;letter-spacing:.03em}
   .card{padding:14px 13px}
   .card h3{font-size:13.5px}
   .tag{font-size:10px;padding:2px 6px}
+  .card table{display:block;width:100%}
+  .card thead{display:none}
+  .card tbody,.card tr{display:block;width:100%}
+  .card tr{position:relative;padding:11px 48px 11px 0;border-bottom:1px solid var(--line)}
+  .card tr:last-child{border-bottom:none}
+  .card td{display:block;border:none;padding:1px 0;font-size:13px;overflow-wrap:anywhere}
+  .card td.num{font-weight:700;font-size:15px;text-align:left}
+  .card td:first-child{font-size:11px;color:var(--s500);font-weight:600;letter-spacing:.02em}
+  .card .rowdel{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+  .card td.empty{padding:14px 4px;text-align:center;font-size:13px;color:var(--s400)}
+  .card tr:has(td.empty){padding-right:0;border-bottom:none}
 }
 
-/* 7. Gráfico anual e panorama respiram no celular */
+/* 7. Gráfico anual e panorama: 12 colunas NÃO cabem lado a lado em 360px.
+   Antes rolavam para o lado (overflow-x:auto). Viram grade 6x2 — o ano inteiro
+   aparece de uma vez, sem rolagem lateral e sem esconder metade do ano. */
 @media(max-width:560px){
   .chart{height:120px;gap:4px}
   .chart .c .lb{font-size:9px}
-  .pano .col{width:52px}
   .rfx-t{font-size:14px}
+  .pano{display:grid;grid-template-columns:repeat(6,1fr);gap:8px 4px;overflow:visible}
+  .pano .col{width:auto;flex:none}
+  .pano .colbar{height:52px}
+  .pano .colbar > i{width:16px}
+  .pano .colhead{font-size:10px}
+  .pano .colval{font-size:9px;margin-top:3px}
 }
 
 /* 8. Overlays coladas no fundo da tela (mais fácil de alcançar o polegar) */
@@ -390,6 +432,76 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
    Preparado para futura sincronização com Supabase.
    ============================================================ */
 const BRL = n => (n<0?'-':'')+'R$ '+Math.abs(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ============================================================
+   MÁSCARAS — camada de superfície. A engine continua em Number/ISO.
+
+   Dinheiro: o usuário digita SÓ dígitos e o valor se monta da direita para a
+   esquerda (1234 vira 12,34). No celular isso vale ouro: teclado numérico,
+   sem vírgula, sem ponto, impossível digitar letra ou dois separadores.
+   `type=number` parecia resolver, mas em pt-BR ele briga com a vírgula, aceita
+   "e"/"+"/"-" e ainda põe setinhas que no toque só atrapalham.
+
+   Data: dd/mm/aaaa com barras automáticas. Mantemos o seletor NATIVO a um
+   toque (botão 📅 -> showPicker) porque no celular o calendário do sistema é
+   melhor que qualquer coisa que a gente desenhe — a máscara serve a quem
+   prefere digitar, o picker serve a quem prefere tocar. Os dois, não um.
+   ============================================================ */
+const vmMoneyFmt = n => (Math.round((+n||0)*100)/100)
+  .toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const vmMoneyVal = el => { const d=(el?.value||'').replace(/\D/g,''); return d ? (+d)/100 : null; };
+function vmMoneyMask(el){
+  const apply=()=>{ const d=(el.value||'').replace(/\D/g,'').slice(0,11);
+    el.value = d ? (Number(d)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
+  const caretEnd=()=>{ try{ el.setSelectionRange(el.value.length, el.value.length);}catch(e){} };
+  el.addEventListener('input', ()=>{ apply(); caretEnd(); });
+  el.addEventListener('focus', ()=> setTimeout(caretEnd,0));
+  apply();
+}
+const vmDateBR  = iso => { if(!iso) return ''; const p=String(iso).split('-');
+  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : ''; };
+const vmDateISO = el => { const d=(el?.value||'').replace(/\D/g,''); if(d.length!==8) return '';
+  const dd=+d.slice(0,2), mm=+d.slice(2,4), yy=+d.slice(4,8);
+  if(dd<1||dd>31||mm<1||mm>12||yy<1900) return '';
+  return `${d.slice(4,8)}-${d.slice(2,4)}-${d.slice(0,2)}`; };
+function vmDateMask(el){
+  const apply=()=>{ const d=(el.value||'').replace(/\D/g,'').slice(0,8);
+    let out=d.slice(0,2);
+    if(d.length>2) out+='/'+d.slice(2,4);
+    if(d.length>4) out+='/'+d.slice(4,8);
+    el.value=out; };
+  el.addEventListener('input', apply); apply();
+}
+/* Campo de data = máscara + calendário nativo. Devolve o HTML pronto. */
+function vmCampoData(id, cls='f-sm', extra=''){
+  return `<span class="dt-wrap">
+    <input type="text" class="date ${cls}" id="${id}" inputmode="numeric"
+           placeholder="dd/mm/aaaa" maxlength="10" ${extra}>
+    <input type="date" class="dt-native" id="${id}-pick" tabindex="-1" aria-hidden="true">
+    <button type="button" class="dt-btn" data-pick="${id}" aria-label="Abrir calendário">📅</button>
+  </span>`;
+}
+/* Liga tudo depois de cada render — idempotente via data-mk. */
+function vmLigarMascaras(root=document){
+  root.querySelectorAll('input.money:not([data-mk])').forEach(el=>{ el.dataset.mk=1; vmMoneyMask(el); });
+  root.querySelectorAll('input.date:not([data-mk])').forEach(el=>{ el.dataset.mk=1; vmDateMask(el); });
+  root.querySelectorAll('.dt-btn:not([data-mk])').forEach(b=>{
+    b.dataset.mk=1;
+    const txt=root.querySelector('#'+b.dataset.pick), nat=root.querySelector('#'+b.dataset.pick+'-pick');
+    if(!txt||!nat) return;
+    nat.onchange=()=>{ txt.value=vmDateBR(nat.value); txt.dispatchEvent(new Event('change',{bubbles:true})); };
+    b.onclick=()=>{ const iso=vmDateISO(txt); if(iso) nat.value=iso;
+      if(nat.showPicker) { try{ nat.showPicker(); return; }catch(e){} }
+      nat.focus(); nat.click();   // navegadores sem showPicker
+    };
+  });
+}
+/* Rótulo honesto do saldo inicial: diz de onde o número veio. */
+function vmOpeningTag(m,mm){
+  if(mm.opening!==null&&mm.opening!=='') return 'ajustado por você';
+  if(m===0) return 'comece por aqui';
+  return mesEncerrado(m-1) ? `herdado de ${MABBR[m-1]}` : `${MABBR[m-1]} ainda em curso`;
+}
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MABBR  = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 const KEY='vizio_money_v1';
@@ -495,7 +607,24 @@ function mesTemMovimento(m){
 }
 function nonCreditOut(m){ let t=0; for(const e of month(m).expenses) if(!isCredit(e.pay)) t+=+e.value; return t; }
 const cashOut = m => nonCreditOut(m) + faturasTotal(m); // o que sai da conta no mês
-function effOpening(m){ const mm=month(m); if(mm.opening!==null&&mm.opening!=='') return +mm.opening; return m===0?0:saldoFinal(m-1); }
+/* Um mês só "entrega" seu saldo para o seguinte depois que ELE acaba.
+   Antes disso o saldo do mês corrente ainda está vivo — todo gasto até o dia 31
+   ainda o altera. Propagar um número que ainda vai mudar enche os meses futuros
+   de um caixa que não existe, e é justamente aí que a pessoa decide gastar.
+   Saldo herdado é fato consumado, não previsão. */
+function mesEncerrado(m){
+  const hoje = new Date();
+  if(S.year < hoje.getFullYear()) return true;    // ano passado: tudo fechado
+  if(S.year > hoje.getFullYear()) return false;   // ano futuro: nada fechado
+  return m < hoje.getMonth();                     // ano corrente: só os já vencidos
+}
+function effOpening(m){
+  const mm=month(m);
+  if(mm.opening!==null&&mm.opening!=='') return +mm.opening;  // ajuste manual manda
+  if(m===0) return 0;
+  if(!mesEncerrado(m-1)) return 0;                // mês anterior ainda em curso
+  return saldoFinal(m-1);
+}
 /* investTotal já é líquido: aporte sai, resgate volta (fica negativo e soma). */
 function saldoFinal(m){ return effOpening(m) + incomesTotal(m) - cashOut(m) - investTotal(m); }
 function categoryReal(cat,m){ let t=0; for(const e of monthExpenseItems(m)) if(e.cat===cat) t+=+e.value; return t; }
@@ -658,6 +787,7 @@ function render(){
   if(view==='year')   renderYear();
   if(view==='invest') renderInvest();
   if(view==='base')   renderBase();
+  vmLigarMascaras();   /* os campos nascem a cada render — a máscara vem junto */
   save();
 }
 
@@ -707,12 +837,13 @@ function renderMonth(){
     </div>
     <div class="vm-head-r">
       <label for="opening">Saldo inicial</label>
-      <input id="opening" class="num" type="number" step="0.01"
-        placeholder="${BRL(m===0?0:saldoFinal(m-1)).replace('R$ ','')}" value="${mm.opening??''}">
-      <span class="budmeta">${mm.opening!==null&&mm.opening!==''?'ajustado':'herdado'}</span>
+      <input id="opening" class="num money" type="text" inputmode="decimal"
+        placeholder="${m===0?'0,00':(mesEncerrado(m-1)?BRL(saldoFinal(m-1)).replace('R$ ',''):'0,00')}"
+        value="${mm.opening!==null&&mm.opening!==''?vmMoneyFmt(mm.opening):''}">
+      <span class="budmeta">${vmOpeningTag(m,mm)}</span>
     </div>`;
   host.appendChild(head);
-  head.querySelector('#opening').onchange=e=>{ mm.opening = e.target.value===''?null:+e.target.value; render(); };
+  head.querySelector('#opening').onchange=e=>{ mm.opening = vmMoneyVal(e.target); render(); };
 
   // KPIs
   const kpi=document.createElement('div'); kpi.className='kpi'; kpi.style.marginTop='12px';
@@ -784,14 +915,14 @@ function entradasCard(m){
     <table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th></th></tr></thead>
     <tbody>${rows||`<tr><td colspan="4" class="empty">Sem entradas ainda. Adicione salário, freela, restituição…</td></tr>`}</tbody></table>
     <div class="addrow">
-      <input type="date" class="f-sm" id="i-date">
+      ${vmCampoData('i-date')}
       <input class="f-desc" id="i-desc" placeholder="Descrição (ex.: Salário)">
-      <input class="f-num num" id="i-val" type="number" step="0.01" placeholder="0,00">
+      <input class="f-num num money" id="i-val" type="text" inputmode="decimal" placeholder="0,00">
       <button class="btn btn-sm" id="i-add">Adicionar</button>
     </div>`;
   c.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{month(m).incomes.splice(+b.dataset.i,1);render()});
   c.querySelector('#i-add').onclick=()=>{
-    const d=c.querySelector('#i-date').value, de=c.querySelector('#i-desc').value.trim(), v=parseFloat(c.querySelector('#i-val').value);
+    const d=vmDateISO(c.querySelector('#i-date')), de=c.querySelector('#i-desc').value.trim(), v=vmMoneyVal(c.querySelector('#i-val'));
     if(!de||!(v>0))return toast('Preencha descrição e valor');
     month(m).incomes.push({date:d||today(m),desc:de,value:v}); toast('Entrada adicionada 💰'); render();
   };
@@ -808,18 +939,18 @@ function gastosCard(m){
     <table><thead><tr><th>Data</th><th>Descrição</th><th>Pgto</th><th>Valor</th><th></th></tr></thead>
     <tbody>${rows||`<tr><td colspan="5" class="empty">Registre contas, mercado, assinaturas, do dia a dia…</td></tr>`}</tbody></table>
     <div class="addrow">
-      <input type="date" class="f-sm" id="e-date">
+      ${vmCampoData('e-date')}
       <input class="f-desc" id="e-desc" placeholder="Descrição">
       <select class="f-sel" id="e-cat">${S.categories.map(x=>`<option>${x}</option>`).join('')}</select>
       <select class="f-sel" id="e-pay">${allPayments().map(x=>`<option>${x}</option>`).join('')}</select>
-      <input class="f-num num" id="e-val" type="number" step="0.01" placeholder="0,00">
+      <input class="f-num num money" id="e-val" type="text" inputmode="decimal" placeholder="0,00">
       <button class="btn btn-sm" id="e-add">Adicionar</button>
     </div>
     <div class="budmeta" style="margin-top:6px">Pagamento em cartão = crédito (entra na fatura do mês seguinte). Pix/Débito sai na hora.</div>`;
   c.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{month(m).expenses.splice(+b.dataset.i,1);render()});
   c.querySelector('#e-add').onclick=()=>{
-    const d=c.querySelector('#e-date').value,de=c.querySelector('#e-desc').value.trim(),cat=c.querySelector('#e-cat').value,
-      pay=c.querySelector('#e-pay').value,v=parseFloat(c.querySelector('#e-val').value);
+    const d=vmDateISO(c.querySelector('#e-date')),de=c.querySelector('#e-desc').value.trim(),cat=c.querySelector('#e-cat').value,
+      pay=c.querySelector('#e-pay').value,v=vmMoneyVal(c.querySelector('#e-val'));
     if(!de||!(v>0))return toast('Preencha descrição e valor');
     month(m).expenses.push({date:d||today(m),desc:de,cat,pay,value:v}); toast('Gasto registrado'); render();
   };
@@ -843,9 +974,9 @@ function parceladasCard(m){
       <input class="f-desc" id="p-desc" placeholder="Descrição (ex.: Celular pai)">
       <select class="f-sel" id="p-cat">${S.categories.map(x=>`<option>${x}</option>`).join('')}</select>
       <select class="f-sel" id="p-card">${S.cards.map(x=>`<option>${esc(x.nome)}</option>`).join('')}</select>
-      <input type="date" class="f-sm" id="p-data" title="Data da compra">
-      <input class="f-num num" id="p-val" type="number" step="0.01" placeholder="valor/parcela">
-      <input class="f-sm num" id="p-n" type="number" min="1" max="48" placeholder="nº parc.">
+      ${vmCampoData('p-data','f-sm','title="Data da compra"')}
+      <input class="f-num num money" id="p-val" type="text" inputmode="decimal" placeholder="valor/parcela">
+      <input class="f-sm num" id="p-n" type="number" inputmode="numeric" min="1" max="48" placeholder="nº parc.">
       <button class="btn btn-sm" id="p-add">Adicionar</button>
     </div>
     <div class="budmeta" id="p-hint" style="margin-top:6px">A 1ª parcela é definida sozinha pela <b>melhor data de compra</b> do cartão.</div>`;
@@ -853,7 +984,7 @@ function parceladasCard(m){
 
   /* Mostra ao vivo em que mês a 1ª parcela vai cair — o usuário entende a regra. */
   const prever=()=>{
-    const d=c.querySelector('#p-data').value, card=c.querySelector('#p-card').value;
+    const d=vmDateISO(c.querySelector('#p-data')), card=c.querySelector('#p-card').value;
     const h=c.querySelector('#p-hint');
     if(!d){ h.innerHTML='A 1ª parcela é definida sozinha pela <b>melhor data de compra</b> do cartão.'; return; }
     const cd=getCard(card), mf=mesDaFatura(d,card);
@@ -862,11 +993,14 @@ function parceladasCard(m){
       (depois ? `Comprou a partir do dia ${cd.melhor} (melhor data) — caiu no ciclo seguinte, com mais prazo. ✔`
               : `Comprou antes do dia ${cd?.melhor||1} — entra na fatura que fecha agora.`);
   };
-  c.querySelector('#p-data').onchange=prever; c.querySelector('#p-card').onchange=prever;
+  /* 'input' também: com máscara o mês previsto aparece assim que a data fecha. */
+  c.querySelector('#p-data').addEventListener('input',prever);
+  c.querySelector('#p-data').addEventListener('change',prever);
+  c.querySelector('#p-card').onchange=prever;
 
   c.querySelector('#p-add').onclick=()=>{
     const de=c.querySelector('#p-desc').value.trim(),cat=c.querySelector('#p-cat').value,card=c.querySelector('#p-card').value,
-      data=c.querySelector('#p-data').value, v=parseFloat(c.querySelector('#p-val').value),n=parseInt(c.querySelector('#p-n').value);
+      data=vmDateISO(c.querySelector('#p-data')), v=vmMoneyVal(c.querySelector('#p-val')),n=parseInt(c.querySelector('#p-n').value);
     if(!de||!(v>0)||!(n>0))return toast('Preencha descrição, valor da parcela e nº de parcelas');
     const start=Math.min(11, mesDaFatura(data, card));   /* automático pela melhor data */
     S.purchases.push({id:uid(),desc:de,cat,card,value:v,parcelas:n,start,data:data||today(m)});
@@ -911,12 +1045,12 @@ function budgetCard(m){
     ${alerta}${lines}
     <div class="addrow" style="margin-top:12px">
       <input class="f-desc" id="oc-nova" placeholder="Nova categoria (ex.: Pets)">
-      <input class="f-num num" id="oc-teto" type="number" step="1" placeholder="teto R$">
+      <input class="f-num num money" id="oc-teto" type="text" inputmode="decimal" placeholder="teto R$">
       <button class="btn btn-sm" id="oc-add">Criar</button>
     </div>
     <div class="budmeta" style="margin-top:8px">O arco dourado se completa conforme você usa o teto — cheio = no limite.</div>`;
   c.querySelector('#oc-add').onclick=()=>{
-    const n=c.querySelector('#oc-nova').value.trim(), t=parseFloat(c.querySelector('#oc-teto').value);
+    const n=c.querySelector('#oc-nova').value.trim(), t=vmMoneyVal(c.querySelector('#oc-teto'));
     if(!n) return toast('Dê um nome à categoria');
     if(!S.categories.includes(n)) S.categories.push(n);
     S.budgets[n] = t>0 ? t : 0;
@@ -976,16 +1110,16 @@ function investCard(m){
     <table><thead><tr><th>Data</th><th>Onde</th><th>Valor</th><th></th></tr></thead>
     <tbody>${rows||`<tr><td colspan="4" class="empty">Guardou algo? Caixinha, Tesouro, ação… registre aqui.</td></tr>`}</tbody></table>
     <div class="addrow">
-      <input type="date" class="f-sm" id="v-date">
+      ${vmCampoData('v-date')}
       <input class="f-desc" id="v-place" placeholder="Onde (ex.: Caixinha Nu)">
       <select class="f-sel" id="v-tipo"><option value="aporte">Guardar (aporte)</option><option value="resgate">Resgatar (saída)</option></select>
-      <input class="f-num num" id="v-val" type="number" step="0.01" placeholder="0,00">
+      <input class="f-num num money" id="v-val" type="text" inputmode="decimal" placeholder="0,00">
       <button class="btn btn-sm" id="v-add">Registrar</button>
     </div>`;
   c.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{month(m).investments.splice(+b.dataset.i,1);render()});
   c.querySelector('#v-add').onclick=()=>{
-    const d=c.querySelector('#v-date').value,pl=c.querySelector('#v-place').value.trim(),
-      tipo=c.querySelector('#v-tipo').value, v=parseFloat(c.querySelector('#v-val').value);
+    const d=vmDateISO(c.querySelector('#v-date')),pl=c.querySelector('#v-place').value.trim(),
+      tipo=c.querySelector('#v-tipo').value, v=vmMoneyVal(c.querySelector('#v-val'));
     if(!pl||!(v>0))return toast('Preencha onde e valor');
     month(m).investments.push({date:d||today(m),place:pl,value:v,tipo});
     toast(tipo==='resgate'?'Resgate registrado':'Investimento guardado 🌱'); render();
@@ -1110,14 +1244,13 @@ function renderBase(){
   nc.innerHTML=`<h3>👤 Meus dados <span class="sub">${vmHoje()}</span></h3>
     <div class="addrow">
       <input class="f-desc" id="me-nome" placeholder="Seu nome" value="${esc(S.nome||'')}">
-      <input class="f-num num" id="me-hora" type="number" step="0.01" placeholder="R$/hora" value="${S.hourlyWage??''}">
+      <input class="f-num num money" id="me-hora" type="text" inputmode="decimal" placeholder="R$/hora" value="${S.hourlyWage!=null?vmMoneyFmt(S.hourlyWage):''}">
       <button class="btn btn-sm" id="me-save">Salvar</button>
     </div>
     <div class="budmeta" style="margin-top:6px">O valor da hora é o que a IA usa para traduzir gasto em tempo de trabalho. Em branco = estimado pela renda (${BRL(estHourly())}/h).</div>`;
   nc.querySelector('#me-save').onclick=()=>{
     S.nome = nc.querySelector('#me-nome').value.trim();
-    const h = nc.querySelector('#me-hora').value;
-    S.hourlyWage = h===''?null:+h;
+    S.hourlyWage = vmMoneyVal(nc.querySelector('#me-hora'));
     toast('Dados salvos'); render();
   };
   host.appendChild(nc);
@@ -1129,14 +1262,14 @@ function renderBase(){
     <table><thead><tr><th>Cartão</th><th>Vence dia</th><th>Melhor compra</th><th></th></tr></thead><tbody>
     ${S.cards.map((c,i)=>`<tr>
       <td><b>${esc(c.nome)}</b></td>
-      <td><input class="num f-mini" type="number" min="1" max="31" data-venc="${i}" value="${c.venc||10}"></td>
-      <td><input class="num f-mini" type="number" min="1" max="31" data-melhor="${i}" value="${c.melhor||1}"></td>
+      <td><input class="num f-mini" type="number" inputmode="numeric" min="1" max="31" data-venc="${i}" value="${c.venc||10}"></td>
+      <td><input class="num f-mini" type="number" inputmode="numeric" min="1" max="31" data-melhor="${i}" value="${c.melhor||1}"></td>
       <td><button class="rowdel" data-c="${esc(c.nome)}">✕</button></td></tr>`).join('')}
     </tbody></table>
      <div class="addrow">
        <input class="f-desc" id="c-name" placeholder="Nome (ex.: Nubank)">
-       <input class="f-sm num" id="c-venc" type="number" min="1" max="31" placeholder="vence">
-       <input class="f-sm num" id="c-melhor" type="number" min="1" max="31" placeholder="melhor">
+       <input class="f-sm num" id="c-venc" type="number" inputmode="numeric" min="1" max="31" placeholder="vence">
+       <input class="f-sm num" id="c-melhor" type="number" inputmode="numeric" min="1" max="31" placeholder="melhor">
        <button class="btn btn-sm" id="c-add">Adicionar</button>
      </div>
      <div class="budmeta" style="margin-top:8px">A <b>melhor data de compra</b> é o dia seguinte ao fechamento — comprar nela dá o prazo máximo. O app usa isso para saber em que mês cada parcela cai.</div>
@@ -1156,11 +1289,12 @@ function renderBase(){
   const bc=document.createElement('div'); bc.className='card';
   bc.innerHTML=`<h3>🏷️ Categorias & teto de gasto</h3>
     ${S.categories.map(cat=>`<div class="budline"><div class="budcat">${esc(cat)}</div>
-      <input class="num" data-cat="${esc(cat)}" type="number" step="1" value="${S.budgets[cat]??''}" placeholder="teto"
+      <input class="num money" data-cat="${esc(cat)}" type="text" inputmode="decimal"
+        value="${S.budgets[cat]!=null&&S.budgets[cat]!==''?vmMoneyFmt(S.budgets[cat]):''}" placeholder="teto"
         style="width:100px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px">
       <button class="rowdel" data-cat="${esc(cat)}">✕</button></div>`).join('')}
     <div class="addrow"><input class="f-desc" id="cat-name" placeholder="Nova categoria"><button class="btn btn-sm" id="cat-add">Adicionar</button></div>`;
-  bc.querySelectorAll('input[data-cat]').forEach(inp=>inp.onchange=()=>{S.budgets[inp.dataset.cat]=inp.value===''?0:+inp.value;render()});
+  bc.querySelectorAll('input[data-cat]').forEach(inp=>inp.onchange=()=>{S.budgets[inp.dataset.cat]=vmMoneyVal(inp)??0;render()});
   bc.querySelectorAll('.rowdel[data-cat]').forEach(b=>b.onclick=()=>{S.categories=S.categories.filter(x=>x!==b.dataset.cat);render()});
   bc.querySelector('#cat-add').onclick=()=>{const n=bc.querySelector('#cat-name').value.trim();if(n&&!S.categories.includes(n)){S.categories.push(n);S.budgets[n]=0;}render()};
   wrap.appendChild(bc);
@@ -1171,10 +1305,10 @@ function renderBase(){
   ia.innerHTML=`<h3><span>✦ IA de Reflexão</span><span class="sub">custo de oportunidade</span></h3>
     <p class="budmeta">Quanto vale 1 hora do seu trabalho? A IA usa isso para traduzir gastos em horas. Em branco = estimado pela sua renda (${BRL(estHourly())}/h).</p>
     <div class="addrow">
-      <input class="f-num num" id="ia-hw" type="number" step="0.01" placeholder="R$/hora" value="${S.hourlyWage??''}">
+      <input class="f-num num money" id="ia-hw" type="text" inputmode="decimal" placeholder="R$/hora" value="${S.hourlyWage!=null?vmMoneyFmt(S.hourlyWage):''}">
       <button class="btn btn-sm" id="ia-save">Salvar</button>
     </div>`;
-  ia.querySelector('#ia-save').onclick=()=>{const v=ia.querySelector('#ia-hw').value; S.hourlyWage=v===''?null:+v; toast('Valor da hora atualizado'); render();};
+  ia.querySelector('#ia-save').onclick=()=>{ S.hourlyWage=vmMoneyVal(ia.querySelector('#ia-hw')); toast('Valor da hora atualizado'); render();};
   host.appendChild(ia);
 
   // dados
@@ -1274,6 +1408,6 @@ render();
 
 <!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="auth.js?v=0.5"></script>
+<script src="auth.js?v=0.8"></script>
 </body>
 </html>
