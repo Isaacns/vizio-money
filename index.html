@@ -172,21 +172,9 @@ tr:last-child td{border-bottom:none}
   .sidenav .nav-i.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
     border-radius:0 3px 3px 0;background:var(--grad-gold)}
 
-  /* PADRÃO VIZIO — conteúdo centralizado na ÁREA LIVRE (tela menos a sidebar).
-     Bug que isto corrige: `.wrap` era `max-width:1080px; margin:0 auto`, e eu
-     tinha escrito `margin-left:186px` para abrir espaço da sidebar. Só que
-     margin-left explícito ANULA o `auto` da esquerda — a centralização morre,
-     o conteúdo cola na sidebar e sobra um vazio enorme à direita.
-
-     A conta: para centralizar uma caixa de 1080 na região [186 .. 100%]:
-       esquerda = 186 + (100% - 186)/2 - 540  ->  50% - 447px
-     O max() garante que ela nunca invade a sidebar em telas estreitas.
-     A sidebar é MOLDURA, não conteúdo — por isso a centralização ignora ela. */
-  .wrap, .foot{
-    margin-left: max(var(--sidenav-w),
-                     calc(50% - (var(--wrap-max) / 2) + (var(--sidenav-w) / 2)));
-    margin-right: auto;
-  }
+  /* A centralização do conteúdo mora no FIM desta folha (busque por
+     "PADRÃO VIZIO · CENTRALIZAÇÃO"). Precisa ficar lá por causa da cascata:
+     `.foot` redefine `margin` com shorthand mais adiante e venceria daqui. */
   .topbar{padding-left:26px}
 }
 
@@ -287,6 +275,31 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 .foot{max-width:1080px;margin:24px auto 0;padding:0 18px;color:var(--s400);font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .section-title{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--s500);margin:26px 0 10px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* ==========================================================================
+   PADRÃO VIZIO · CENTRALIZAÇÃO
+   Todo sistema com menu lateral centraliza o conteúdo na ÁREA LIVRE (a tela
+   menos a sidebar). A sidebar é MOLDURA, não conteúdo.
+
+   Dois bugs que isto corrige, e ambos foram medidos no ar:
+   1) `margin-left:186px` para "abrir espaço" ANULA o `auto` da esquerda — a
+      centralização morre e o conteúdo cola na sidebar (desvio de -447px).
+   2) `.foot` era `margin:24px auto 0`. Como esse shorthand aparece DEPOIS do
+      bloco da sidebar, ele vencia a regra por ordem de cascata e o rodapé
+      ficava centralizado na tela inteira, 93px fora do conteúdo.
+      Por isso este bloco é o ÚLTIMO da folha: aqui nada o sobrescreve.
+
+   A conta, para centralizar uma caixa W na região [S .. 100%]:
+     esquerda = S + (100% - S)/2 - W/2  ->  50% - W/2 + S/2
+   O max() impede que invada a sidebar em telas estreitas.
+   ========================================================================== */
+@media(min-width:821px){
+  .wrap, .foot{
+    margin-left: max(var(--sidenav-w),
+                     calc(50% - (var(--wrap-max) / 2) + (var(--sidenav-w) / 2)));
+    margin-right: auto;
+  }
+}
 
 /* ==========================================================================
    REVISÃO MOBILE — o app vive no celular.
