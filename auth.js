@@ -35,7 +35,7 @@ async function vmCarregarSessao(){
   if(!VM.user){ VM.perfil=null; VM.assina=null; VM.admin=false; VM.status='none'; VM.source=null; VM.ready=true; return; }
 
   const [perfil, assina] = await Promise.all([
-    vmdb.from('vm_perfis').select('nome,is_admin,hourly_wage').eq('user_id',VM.user.id).maybeSingle(),
+    vmdb.from('vm_perfis').select('nome,is_admin,hourly_wage,avatar_url').eq('user_id',VM.user.id).maybeSingle(),
     vmdb.from('vm_assinaturas').select('plan,status,source,current_period_end').eq('user_id',VM.user.id).maybeSingle()
   ]);
 
@@ -180,6 +180,147 @@ async function vmNuvemPuxar(){
     vmSyncChip('erro');
     _vmPushLiberado = false;   // não puxei: não tenho direito de empurrar
   }
+}
+
+/* ================= AVATAR =================
+   Sem foto, mostramos INICIAIS — nunca o boneco cinza. Iniciais no azul da
+   marca já parecem "seu"; boneco genérico parece cadastro pela metade. */
+function vmIniciais(){
+  const base = (VM.perfil?.nome || S.nome || VM.user?.email || '').trim();
+  if(!base) return '👤';
+  if(base.includes('@')) return base[0].toUpperCase();
+  const p = base.split(/\s+/).filter(Boolean);
+  return ((p[0]?.[0]||'') + (p.length>1 ? p[p.length-1][0] : '')).toUpperCase() || '👤';
+}
+const vmFotoUrl = () => VM.perfil?.avatar_url || null;
+
+/* Devolve o HTML de um avatar. `cls` diferencia topo x tela de conta. */
+function vmAvatarHTML(cls=''){
+  const url = vmFotoUrl();
+  if(url) return `<img src="${esc(url)}" alt="Sua foto" loading="lazy">`;
+  const ini = vmIniciais();
+  return `<span class="av-ini${VM.user?' tem':''}">${esc(ini)}</span>`;
+}
+
+function vmAvatarTopo(){
+  const b = document.getElementById('btnMenu'); if(!b) return;
+  b.innerHTML = vmAvatarHTML();
+  b.classList.toggle('on', view==='conta');
+  b.title = VM.user ? 'Sua conta' : 'Entrar';
+}
+
+/* ---- Recortador: arrasta para posicionar, controle para aproximar ----
+   Corte automático no centro decapita metade das fotos de celular (o rosto
+   quase nunca está no centro geométrico). Deixar a pessoa enquadrar custa
+   pouco código e evita a foto ruim que ela nunca mais troca. */
+function vmRecortarFoto(file){
+  return new Promise((resolve)=>{
+    const r = document.getElementById('overlayRoot');
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      const LADO = 264;               // área de recorte na tela
+      const SAIDA = 256;              // resolução final gravada
+      r.innerHTML = `<div class="overlay"><div class="sheet">
+        <h2 style="margin-bottom:4px">Enquadre sua foto</h2>
+        <p class="crop-dica">Arraste para posicionar · use o controle para aproximar</p>
+        <div class="crop-area" id="cropArea"><canvas id="cropCv" width="${LADO}" height="${LADO}"></canvas></div>
+        <input type="range" class="crop-zoom" id="cropZoom" min="1" max="4" step="0.01" value="1">
+        <button class="btn" id="cropOk" style="width:100%">Usar esta foto</button>
+        <button class="linklike" id="cropNao">Cancelar</button>
+      </div></div>`;
+
+      const cv = document.getElementById('cropCv'), cx = cv.getContext('2d');
+      const escalaMin = Math.max(LADO/img.width, LADO/img.height);   // sempre cobre o círculo
+      let z = 1, ox = 0, oy = 0;
+
+      const limitar = ()=>{
+        const e = escalaMin*z, lg = img.width*e, al = img.height*e;
+        const maxX = Math.max(0,(lg-LADO)/2), maxY = Math.max(0,(al-LADO)/2);
+        ox = Math.min(maxX, Math.max(-maxX, ox));
+        oy = Math.min(maxY, Math.max(-maxY, oy));
+      };
+      const pintar = ()=>{
+        limitar();
+        const e = escalaMin*z, lg = img.width*e, al = img.height*e;
+        cx.clearRect(0,0,LADO,LADO);
+        cx.fillStyle = '#000'; cx.fillRect(0,0,LADO,LADO);
+        cx.drawImage(img, (LADO-lg)/2+ox, (LADO-al)/2+oy, lg, al);
+      };
+      pintar();
+
+      /* Ponteiro unificado: mouse e dedo pelo mesmo caminho. */
+      const area = document.getElementById('cropArea');
+      let arrastando=false, px=0, py=0;
+      area.addEventListener('pointerdown', e=>{ arrastando=true; px=e.clientX; py=e.clientY; area.setPointerCapture(e.pointerId); });
+      area.addEventListener('pointermove', e=>{ if(!arrastando) return;
+        ox += e.clientX-px; oy += e.clientY-py; px=e.clientX; py=e.clientY; pintar(); });
+      area.addEventListener('pointerup',     ()=> arrastando=false);
+      area.addEventListener('pointercancel', ()=> arrastando=false);
+      document.getElementById('cropZoom').addEventListener('input', e=>{ z=+e.target.value; pintar(); });
+
+      const fechar = ()=>{ URL.revokeObjectURL(url); r.innerHTML=''; };
+      document.getElementById('cropNao').onclick = ()=>{ fechar(); resolve(null); };
+      document.getElementById('cropOk').onclick = ()=>{
+        /* Redesenha na resolução final e exporta em webp: foto de celular tem
+           4MB+; sem isto o upload demora e estoura o limite do bucket. */
+        const out = document.createElement('canvas'); out.width=out.height=SAIDA;
+        const ox2 = out.getContext('2d');
+        const k = SAIDA/LADO, e = escalaMin*z, lg = img.width*e*k, al = img.height*e*k;
+        ox2.fillStyle='#000'; ox2.fillRect(0,0,SAIDA,SAIDA);
+        ox2.drawImage(img, (SAIDA-lg)/2+ox*k, (SAIDA-al)/2+oy*k, lg, al);
+        out.toBlob(b=>{ fechar(); resolve(b); }, 'image/webp', 0.85);
+      };
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); toast('Não consegui ler essa imagem'); resolve(null); };
+    img.src = url;
+  });
+}
+
+async function vmTrocarFoto(){
+  if(!VM.user) return vmAccount();
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange = async ()=>{
+    const f = inp.files?.[0]; if(!f) return;
+    if(!/^image\//.test(f.type)) return toast('Escolha uma imagem');
+    if(f.size > 20*1024*1024)   return toast('Imagem muito grande (máx. 20MB)');
+
+    const blob = await vmRecortarFoto(f);
+    if(!blob) return;
+
+    toast('Enviando foto…');
+    try{
+      const caminho = `${VM.user.id}/avatar.webp`;   // caminho fixo: nunca acumula lixo
+      const { error } = await vmdb.storage.from('vm-avatares')
+        .upload(caminho, blob, { upsert:true, contentType:'image/webp', cacheControl:'3600' });
+      if(error) throw error;
+
+      const { data } = vmdb.storage.from('vm-avatares').getPublicUrl(caminho);
+      /* ?t= quebra o cache do CDN: sem isso você troca a foto e continua vendo a antiga. */
+      const url = `${data.publicUrl}?t=${Date.now()}`;
+      const { error: e2 } = await vmdb.from('vm_perfis').update({ avatar_url: url }).eq('user_id', VM.user.id);
+      if(e2) throw e2;
+
+      if(VM.perfil) VM.perfil.avatar_url = url; else VM.perfil = { avatar_url: url };
+      vmAvatarTopo(); render();
+      toast('Foto atualizada 📸');
+    }catch(e){
+      console.warn('VIZIO Money · avatar:', e.message);
+      toast('Não consegui enviar a foto. Tente de novo.');
+    }
+  };
+  inp.click();
+}
+
+async function vmRemoverFoto(){
+  if(!VM.user || !vmFotoUrl()) return;
+  try{
+    await vmdb.storage.from('vm-avatares').remove([`${VM.user.id}/avatar.webp`]);
+    await vmdb.from('vm_perfis').update({ avatar_url:null }).eq('user_id', VM.user.id);
+    if(VM.perfil) VM.perfil.avatar_url = null;
+    vmAvatarTopo(); render(); toast('Foto removida');
+  }catch(e){ toast('Não consegui remover agora'); }
 }
 
 /* ================= PUXAR PARA ATUALIZAR =================
@@ -343,8 +484,7 @@ function vmChrome(){
       chip.textContent = VM.source==='cortesia' ? 'Pro · cortesia' : 'Pro'; }
     else { chip.className='plan-chip plan-free'; chip.textContent='Free'; }
   }
-  const btn = document.getElementById('btnMenu');
-  if(btn) btn.title = VM.user ? VM.user.email : 'Entrar';
+  vmAvatarTopo();
 
   /* faixa de pagamento pendente (carência) */
   const velha = document.getElementById('vmBanner');
@@ -458,6 +598,237 @@ function vmAccount(){
     }finally{
       const g=document.getElementById('vm-go');
       if(g){ g.disabled=false; g.textContent = vmTab==='criar' ? 'Criar minha conta' : 'Entrar'; }
+    }
+  };
+}
+
+/* ================= TELA DE CONFIGURAÇÃO DO USUÁRIO =================
+   Tela de verdade (view), não folha flutuante: ajuste de conta é lugar onde a
+   pessoa PARA e lê — e onde moram ações sérias (senha, exportar, apagar conta).
+   Overlay num app de dinheiro passa recado de "coisa rápida"; não é. */
+window.renderConta = function renderConta(){
+  const host = document.getElementById('viewConta');
+  if(!host) return;
+
+  if(!VM.user){
+    host.innerHTML = `<div class="cfg-sec" style="text-align:center;padding:32px 18px">
+      <div class="av-grande" style="margin:0 auto 14px"><span class="av-ini">👤</span></div>
+      <h3 style="letter-spacing:0;text-transform:none;font-size:16px;color:var(--ink)">Entre na sua conta</h3>
+      <p class="budmeta" style="margin:8px 0 16px">Com a conta, sua foto, seus lançamentos e seu plano te acompanham em qualquer aparelho.</p>
+      <button class="btn" id="cfg-entrar" style="width:100%;max-width:280px">Entrar ou criar conta</button>
+    </div>`;
+    host.querySelector('#cfg-entrar').onclick = vmAccount;
+    return;
+  }
+
+  const nome  = VM.perfil?.nome || S.nome || '';
+  const admin = VM.admin;
+  const pro   = S.plan === 'pro';
+  const selo  = admin ? 'MASTER · acesso total'
+              : pro   ? (VM.source==='cortesia' ? 'Pro · cortesia (isento)' : 'Pro ativo')
+                      : 'Plano Free';
+
+  host.innerHTML = `
+    <!-- PERFIL -->
+    <div class="cfg-sec">
+      <h3>Perfil</h3>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <span class="av-wrap">
+          <span class="av-grande" id="cfg-av">${vmAvatarHTML()}</span>
+          <button class="av-edit" id="cfg-foto" title="Trocar foto" aria-label="Trocar foto">📷</button>
+        </span>
+        <div style="min-width:0">
+          <div style="font-weight:800;color:var(--ink);font-size:16px">${esc(nome || 'Sem nome ainda')}</div>
+          <div class="budmeta" style="word-break:break-all">${esc(VM.user.email)}</div>
+          <div style="margin-top:6px"><span class="plan-chip ${admin?'plan-master':(pro?'plan-pro':'plan-free')}">${selo}</span></div>
+          ${vmFotoUrl() ? `<button class="linklike" id="cfg-semfoto" style="padding:4px 0;margin-top:2px">Remover foto</button>` : ''}
+        </div>
+      </div>
+
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Seu nome</b><span class="cfg-hint">Como o app te chama.</span></div>
+        <div class="cfg-vl" style="flex:1;max-width:220px">
+          <input id="cfg-nome" class="f-desc" style="width:100%" value="${esc(nome)}" placeholder="Seu nome">
+        </div>
+      </div>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Valor da sua hora</b>
+          <span class="cfg-hint">A IA usa para traduzir gasto em tempo de trabalho. Em branco = estimado pela sua renda.</span></div>
+        <div class="cfg-vl" style="flex:1;max-width:220px">
+          <input id="cfg-hora" class="f-desc num money" inputmode="decimal" style="width:100%"
+                 value="${S.hourlyWage!=null?vmMoneyFmt(S.hourlyWage):''}" placeholder="R$/hora">
+        </div>
+      </div>
+      <div class="cfg-lin"><div class="cfg-lb"></div>
+        <div class="cfg-vl"><button class="btn btn-sm" id="cfg-salvar">Salvar alterações</button></div></div>
+    </div>
+
+    <!-- ASSINATURA -->
+    <div class="cfg-sec">
+      <h3>Assinatura</h3>
+      ${admin ? `
+        <div class="cfg-lin"><div class="cfg-lb"><b>Acesso MASTER</b>
+          <span class="cfg-hint">Acesso total, sem depender de assinatura. Não entra no faturamento.</span></div></div>`
+      : pro && VM.source==='cortesia' ? `
+        <div class="cfg-lin"><div class="cfg-lb"><b>Pro por cortesia</b>
+          <span class="cfg-hint">Isento — não é assinatura paga e não há nada a cancelar.</span></div></div>`
+      : pro ? `
+        <div class="cfg-lin">
+          <div class="cfg-lb"><b>Pro ativo · R$ 9,90/mês</b>
+            <span class="cfg-hint">Cancele, troque o cartão ou baixe recibos quando quiser.</span></div>
+          <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-portal">Gerenciar · cancelar</button></div>
+        </div>`
+      : `
+        <div class="cfg-lin">
+          <div class="cfg-lb"><b>Plano Free</b>
+            <span class="cfg-hint">Mês atual e o próximo. O Pro abre os 12 meses, o panorama e a visão anual.</span></div>
+          <div class="cfg-vl"><button class="btn btn-sm btn-money" id="cfg-assinar">Assinar · R$ 9,90</button></div>
+        </div>`}
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Conferir meu plano</b><span class="cfg-hint">Pagou agora e ainda aparece Free? Force a verificação.</span></div>
+        <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-sync">Verificar</button></div>
+      </div>
+    </div>
+
+    <!-- SEGURANÇA -->
+    <div class="cfg-sec">
+      <h3>Segurança</h3>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Senha</b>
+          <span class="cfg-hint">Guardada criptografada — nem nós conseguimos lê-la.</span></div>
+        <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-senha">Definir / trocar</button></div>
+      </div>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Sair desta conta</b><span class="cfg-hint">Seus dados continuam salvos na nuvem.</span></div>
+        <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-sair">Sair</button></div>
+      </div>
+    </div>
+
+    <!-- DADOS -->
+    <div class="cfg-sec">
+      <h3>Seus dados</h3>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Sincronização</b><span class="cfg-hint" id="cfg-sync-tx">Salvos na nuvem e neste aparelho.</span></div>
+        <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-agora">Sincronizar agora</button></div>
+      </div>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Exportar backup</b>
+          <span class="cfg-hint">Baixa tudo em JSON. Seus dados são seus — sem pedir para ninguém.</span></div>
+        <div class="cfg-vl"><button class="btn btn-sm btn-ghost" id="cfg-export">Exportar</button></div>
+      </div>
+    </div>
+
+    <!-- ZONA DE PERIGO -->
+    <div class="cfg-sec cfg-perigo">
+      <h3>Zona de perigo</h3>
+      <div class="cfg-lin">
+        <div class="cfg-lb"><b>Apagar minha conta</b>
+          <span class="cfg-hint">Apaga sua conta, seus lançamentos e sua foto. <b>Não tem volta.</b>
+          Se tiver assinatura ativa, cancele antes.</span></div>
+        <div class="cfg-vl"><button class="btn-perigo" id="cfg-apagar">Apagar conta</button></div>
+      </div>
+    </div>
+
+    <div class="budmeta" style="text-align:center;line-height:1.8;padding:4px 0 8px">
+      <a href="manual.html" target="_blank" class="lk-legal">Manual</a> ·
+      <a href="termos.html" target="_blank" class="lk-legal">Termos</a> ·
+      <a href="privacidade.html" target="_blank" class="lk-legal">Privacidade</a><br>
+      VIZIO Money · VIZIO FINANCE · um produto INPERSON
+    </div>`;
+
+  /* ---- ligações ---- */
+  host.querySelector('#cfg-foto').onclick = vmTrocarFoto;
+  host.querySelector('#cfg-semfoto')?.addEventListener('click', vmRemoverFoto);
+
+  host.querySelector('#cfg-salvar').onclick = async ()=>{
+    const n = host.querySelector('#cfg-nome').value.trim();
+    S.nome = n; S.hourlyWage = vmMoneyVal(host.querySelector('#cfg-hora'));
+    if(VM.perfil) VM.perfil.nome = n;
+    try{ await vmdb.from('vm_perfis').update({ nome:n, hourly_wage:S.hourlyWage }).eq('user_id', VM.user.id); }
+    catch(e){ /* falha aberta: o local já valeu, o sync leva depois */ }
+    save(); vmAvatarTopo(); render(); toast('Perfil salvo');
+  };
+
+  host.querySelector('#cfg-senha').onclick = ()=> vmDefinirSenha(true);
+  host.querySelector('#cfg-sync').onclick  = async ()=>{ toast('Verificando…'); await vmRefreshPlan(); render(); };
+  host.querySelector('#cfg-agora').onclick = async ()=>{
+    if(_vmSyncTimer){ clearTimeout(_vmSyncTimer); _vmSyncTimer=null; await vmNuvemEmpurrar(); }
+    await vmNuvemPuxar(); toast('Sincronizado ☁️');
+  };
+  host.querySelector('#cfg-export').onclick = ()=> exportData();
+  host.querySelector('#cfg-assinar')?.addEventListener('click', ()=>{
+    window.open(vmSubscribeUrl(),'_blank','noopener'); toast('Finalize o pagamento na aba aberta');
+  });
+  host.querySelector('#cfg-portal')?.addEventListener('click', ()=> vmAbrirPortal(host.querySelector('#cfg-portal')));
+  host.querySelector('#cfg-sair').onclick = async ()=>{
+    await vmdb.auth.signOut(); await vmRefreshPlan(); view='month'; render(); toast('Você saiu');
+  };
+  host.querySelector('#cfg-apagar').onclick = vmApagarConta;
+
+  vmLigarMascaras(host);
+};
+
+/* Portal do Stripe — mesma função para a tela de conta e a folha antiga. */
+async function vmAbrirPortal(btn){
+  const txt = btn?.textContent;
+  if(btn){ btn.disabled=true; btn.textContent='Abrindo…'; }
+  try{
+    const { data:{ session } } = await vmdb.auth.getSession();
+    const r = await fetch(`${VM_SUPABASE_URL}/functions/v1/vm-portal-cobranca`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json',
+                'Authorization':`Bearer ${session?.access_token||''}`,
+                'apikey': VM_SUPABASE_KEY },
+      body: JSON.stringify({ return_url: location.origin + '/' })
+    });
+    const j = await r.json();
+    if(j.url){ location.href = j.url; return; }
+    toast(j.erro || 'Não consegui abrir o portal');
+  }catch(e){ toast('Falha de conexão. Tente de novo.'); }
+  if(btn){ btn.disabled=false; btn.textContent=txt; }
+}
+
+/* Apagar conta — direito do titular (LGPD art. 18). Confirmação por digitação:
+   um "tem certeza?" é clicado no automático; escrever APAGAR exige intenção. */
+async function vmApagarConta(){
+  const r = document.getElementById('overlayRoot');
+  r.innerHTML = `<div class="overlay"><div class="sheet">
+    <h2>Apagar sua conta</h2>
+    <p class="budmeta" style="margin:8px 0 4px">Isto apaga <b>de vez</b> sua conta, todos os seus lançamentos e sua foto.
+    <b>Não tem como desfazer.</b></p>
+    <p class="budmeta" style="margin-bottom:12px">Se tiver assinatura ativa, <b>cancele antes</b> — apagar a conta não cancela a cobrança.</p>
+    <p class="budmeta" style="margin-bottom:10px">Antes de seguir, que tal <button class="linklike" id="ap-export" style="padding:0;display:inline">exportar seu backup</button>?</p>
+    <div class="vm-field"><label for="ap-txt">Digite <b>APAGAR</b> para confirmar</label>
+      <input id="ap-txt" placeholder="APAGAR" autocomplete="off"></div>
+    <button class="btn-perigo" id="ap-ok" style="width:100%;opacity:.5" disabled>Apagar minha conta</button>
+    <button class="linklike" id="ap-nao">Cancelar</button>
+  </div></div>`;
+
+  const txt = document.getElementById('ap-txt'), ok = document.getElementById('ap-ok');
+  txt.oninput = ()=>{ const v = txt.value.trim().toUpperCase()==='APAGAR';
+    ok.disabled = !v; ok.style.opacity = v ? '1' : '.5'; };
+  document.getElementById('ap-export').onclick = ()=> exportData();
+  document.getElementById('ap-nao').onclick = ()=> r.innerHTML='';
+  ok.onclick = async ()=>{
+    ok.disabled=true; ok.textContent='Apagando…';
+    try{
+      const { data:{ session } } = await vmdb.auth.getSession();
+      const resp = await fetch(`${VM_SUPABASE_URL}/functions/v1/vm-apagar-conta`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json',
+                  'Authorization':`Bearer ${session?.access_token||''}`,
+                  'apikey': VM_SUPABASE_KEY }
+      });
+      const j = await resp.json();
+      if(!resp.ok || !j.ok) throw new Error(j.erro||'Falhou');
+      localStorage.removeItem(KEY);
+      await vmdb.auth.signOut();
+      r.innerHTML='';
+      toast('Conta apagada. Sentiremos sua falta.');
+      setTimeout(()=> location.href='landing.html', 1500);
+    }catch(e){
+      toast(e.message || 'Não consegui apagar agora');
+      ok.disabled=false; ok.textContent='Apagar minha conta';
     }
   };
 }
@@ -608,8 +979,15 @@ window.paywall = function(reason){
 
 /* ================= init ================= */
 (async function vmInit(){
+  /* A foto é a porta da conta: abre a TELA de ajustes, não uma folha flutuante.
+     Sem login, o caminho é entrar primeiro — a tela vazia não ensina nada. */
   const btn=document.getElementById('btnMenu');
-  if(btn) btn.onclick=vmAccount;
+  if(btn) btn.onclick=()=>{
+    if(!VM.user) return vmAccount();
+    view = (view==='conta') ? 'month' : 'conta';   // toca de novo e volta
+    window.scrollTo({top:0,behavior:'smooth'});
+    render();
+  };
 
   /* O link do e-mail chega como #access_token=...&type=recovery.
      Detecto pelo hash porque o evento PASSWORD_RECOVERY pode disparar ANTES

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=1.1">
+<link rel="stylesheet" href="brand.css?v=1.2">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -400,7 +400,8 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
     <span id="planChip" class="plan-chip plan-free">Free</span>
     <button class="icon-btn" id="btnAjuda" title="Como usar o VIZIO Money">❓</button>
     <button class="icon-btn" id="btnBase" title="Cadastros (cartões, categorias, orçamento)">⚙️</button>
-    <button class="icon-btn" id="btnMenu" title="Conta">👤</button>
+    <!-- Avatar: o rosto do usuário é a porta da conta. O auth.js preenche. -->
+    <button class="avatar-btn" id="btnMenu" title="Sua conta"><span class="av-ini">👤</span></button>
   </div>
 </header>
 
@@ -422,6 +423,9 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 
   <!-- VIEW: BASE -->
   <div id="viewBase" class="hide"></div>
+
+  <!-- VIEW: CONTA (ajustes do usuário) — montada pelo auth.js -->
+  <div id="viewConta" class="hide"></div>
 </div>
 
 <div class="foot">
@@ -799,10 +803,14 @@ function render(){
   document.getElementById('viewYear').classList.toggle('hide', view!=='year');
   document.getElementById('viewInvest').classList.toggle('hide', view!=='invest');
   document.getElementById('viewBase').classList.toggle('hide', view!=='base');
+  document.getElementById('viewConta').classList.toggle('hide', view!=='conta');
   if(view==='month')  renderMonth();
   if(view==='year')   renderYear();
   if(view==='invest') renderInvest();
   if(view==='base')   renderBase();
+  /* A conta mora no auth.js, que carrega DEPOIS deste script — o guard evita
+     que o primeiro render() morra caso a view já venha como 'conta'. */
+  if(view==='conta' && window.renderConta) window.renderConta();
   vmLigarMascaras();   /* os campos nascem a cada render — a máscara vem junto */
   save();
 }
@@ -1482,6 +1490,6 @@ render();
 
 <!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="auth.js?v=1.1"></script>
+<script src="auth.js?v=1.2"></script>
 </body>
 </html>
