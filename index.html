@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=1.2">
+<link rel="stylesheet" href="brand.css?v=1.4">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -171,7 +171,22 @@ tr:last-child td{border-bottom:none}
   .sidenav .nav-i.on{background:rgba(201,169,104,.10);color:var(--gold)}
   .sidenav .nav-i.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
     border-radius:0 3px 3px 0;background:var(--grad-gold)}
-  .wrap{margin-left:186px}
+
+  /* PADRÃO VIZIO — conteúdo centralizado na ÁREA LIVRE (tela menos a sidebar).
+     Bug que isto corrige: `.wrap` era `max-width:1080px; margin:0 auto`, e eu
+     tinha escrito `margin-left:186px` para abrir espaço da sidebar. Só que
+     margin-left explícito ANULA o `auto` da esquerda — a centralização morre,
+     o conteúdo cola na sidebar e sobra um vazio enorme à direita.
+
+     A conta: para centralizar uma caixa de 1080 na região [186 .. 100%]:
+       esquerda = 186 + (100% - 186)/2 - 540  ->  50% - 447px
+     O max() garante que ela nunca invade a sidebar em telas estreitas.
+     A sidebar é MOLDURA, não conteúdo — por isso a centralização ignora ela. */
+  .wrap, .foot{
+    margin-left: max(var(--sidenav-w),
+                     calc(50% - (var(--wrap-max) / 2) + (var(--sidenav-w) / 2)));
+    margin-right: auto;
+  }
   .topbar{padding-left:26px}
 }
 
@@ -398,6 +413,9 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
          o usuário lê como "será que perdi?". -->
     <span id="syncChip" class="sync-chip" title="Só neste aparelho"><span>📱</span><span class="sync-tx">Só neste aparelho</span></span>
     <span id="planChip" class="plan-chip plan-free">Free</span>
+    <!-- ❓ = tour guiado (tour.js). Já esteve aqui SEM handler uma vez; agora
+         só existe porque tem para onde levar. -->
+    <button class="icon-btn" id="btnAjuda" title="Como usar o VIZIO Money">❓</button>
     <button class="icon-btn" id="btnBase" title="Cadastros (cartões, categorias, orçamento)">⚙️</button>
     <!-- Avatar: o rosto do usuário é a porta da conta. O auth.js preenche. -->
     <button class="avatar-btn" id="btnMenu" title="Sua conta"><span class="av-ini">👤</span></button>
@@ -1490,5 +1508,8 @@ render();
 <!-- Conta & assinatura (Supabase Auth + Stripe). Carrega depois do app. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="auth.js?v=1.3"></script>
+
+<!-- Tour guiado. Depois do auth.js: um tour precisa saber se a pessoa é nova. -->
+<script src="tour.js?v=1.0"></script>
 </body>
 </html>

@@ -51,6 +51,13 @@
   --font-display:'Inter','Segoe UI',system-ui,sans-serif;
   --vz-tracking-brand:.12em;
 
+  /* ---- Layout (padrão VIZIO) ----
+     Toda tela VIZIO com menu lateral centraliza o conteúdo na ÁREA LIVRE
+     (viewport menos a sidebar) — nunca cola o conteúdo na lateral. A sidebar
+     é moldura, não conteúdo. Ver .wrap/.foot para a conta. */
+  --sidenav-w:186px;
+  --wrap-max:1080px;
+
   /* ---- Raio & sombra ---- */
   --r-sm:6px; --r-md:10px; --r-lg:16px; --r-full:999px;
   --sh-sm:0 1px 2px rgba(0,0,0,.4);
@@ -120,6 +127,34 @@
 /* "Money" recebe o metal azul->ouro do símbolo */
 .brand-word b{font-weight:800;background:var(--grad-money);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .brand-badge{font-family:var(--font);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+
+/* ==========================================================================
+   TOUR GUIADO
+   O escuro é feito com box-shadow gigante no "buraco" — assim o elemento REAL
+   continua visível e no lugar. Clonar o elemento para dentro de um overlay
+   sempre desalinha e, pior, ensina uma tela que não é a de verdade.
+   ========================================================================== */
+#tourMask{position:fixed;inset:0;z-index:90}
+.tour-buraco{position:absolute;border-radius:12px;pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(3,5,10,.82), 0 0 0 2px var(--brand), 0 0 26px 3px rgba(28,100,240,.45);
+  transition:top .3s cubic-bezier(.2,.9,.3,1), left .3s cubic-bezier(.2,.9,.3,1),
+             width .3s ease, height .3s ease, opacity .2s}
+.tour-card{position:absolute;width:min(330px,calc(100vw - 24px));background:var(--night);
+  border:1px solid var(--line2);border-radius:var(--r-lg);padding:16px 18px;
+  box-shadow:0 22px 60px rgba(0,0,0,.7);transition:top .3s ease, left .3s ease}
+.tour-card.meio{top:50%!important;left:50%!important;transform:translate(-50%,-50%)}
+.tour-card h3{font-size:16px;color:var(--ink);margin-bottom:7px;letter-spacing:-.01em}
+.tour-card p{font-size:13.5px;line-height:1.6;color:var(--s600)}
+.tour-card p b{color:var(--warm)}
+.tour-passo{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:6px}
+.tour-pontos{display:flex;gap:5px;margin:13px 0 12px}
+.tour-pontos i{width:5px;height:5px;border-radius:50%;background:var(--line2);transition:.2s}
+.tour-pontos i.on{background:var(--brand);width:16px;border-radius:3px}
+.tour-acoes{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tour-acoes .linklike{margin:0;padding:8px 2px}
+@media (prefers-reduced-motion: reduce){ .tour-buraco,.tour-card{transition:none} }
+@media(max-width:560px){ .tour-card{padding:14px 15px} .tour-card h3{font-size:15px} }
 
 /* ==========================================================================
    AVATAR & CONTA

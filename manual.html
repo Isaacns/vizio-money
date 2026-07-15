@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Manual · VIZIO Money</title>
+<meta name="description" content="Como usar o VIZIO Money — e como decidir melhor com ele. Com simuladores de verdade.">
+<link rel="icon" href="brand/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css?v=1.3">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{overflow-x:clip;max-width:100%;scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--s600);line-height:1.7;overflow-x:clip}
+.mn-top{position:sticky;top:0;z-index:20;background:rgba(6,8,15,.9);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mn-nav{display:flex;gap:14px;font-size:12.5px;flex-wrap:wrap}
+.mn-nav a{color:var(--s500);text-decoration:none;font-weight:600}
+.mn-nav a:hover{color:var(--brand-2)}
+.mn-wrap{max-width:780px;margin:0 auto;padding:30px 20px 90px;position:relative;z-index:1}
+
+.mn-hero{text-align:center;padding:16px 0 30px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.mn-eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+h1{font-size:clamp(28px,7vw,42px);color:var(--ink);font-weight:800;letter-spacing:-.025em;line-height:1.1}
+h1 b{background:var(--grad-money);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.mn-sub{color:var(--s500);font-size:15px;margin-top:12px;max-width:520px;margin-inline:auto}
+
+.mn-sumario{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:22px 0 8px}
+@media(max-width:560px){.mn-sumario{grid-template-columns:1fr}}
+.mn-sumario a{display:flex;align-items:center;gap:9px;padding:11px 13px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--s600);font-size:13.5px;font-weight:600}
+.mn-sumario a:hover{border-color:var(--brand);color:var(--warm)}
+
+h2{font-size:clamp(20px,4.6vw,26px);color:var(--ink);font-weight:800;letter-spacing:-.02em;
+  margin:44px 0 6px;scroll-margin-top:70px}
+.h2-tag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-2);margin-bottom:5px}
+h3{font-size:16px;color:var(--ink);font-weight:800;margin:22px 0 8px}
+p{margin:0 0 13px;font-size:14.5px}
+b,strong{color:var(--s700)}
+a{color:var(--brand-2)}
+ul{margin:0 0 13px 20px}li{margin-bottom:8px;font-size:14.5px}
+
+.mn-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;margin:18px 0}
+.mn-card.ouro{border-color:rgba(201,169,104,.4);background:var(--gold-soft)}
+.mn-card.ouro b{color:var(--gold-2)}
+.mn-passos{counter-reset:p}
+.mn-passo{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.mn-passo:last-child{border-bottom:none;padding-bottom:0}
+.mn-passo::before{counter-increment:p;content:counter(p);flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  background:var(--grad-brand);color:#fff;font-weight:800;font-size:12.5px;display:grid;place-items:center;margin-top:2px}
+.mn-passo div b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:3px}
+.mn-passo div span{font-size:13.5px;color:var(--s500);line-height:1.6}
+
+/* Simuladores */
+.sim{background:linear-gradient(180deg,var(--coal),var(--night));border:1px solid var(--line2);
+  border-radius:var(--r-lg);padding:18px;margin:20px 0}
+.sim-tt{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+  display:flex;align-items:center;gap:7px}
+.sim-lb{font-size:12.5px;color:var(--s500);font-weight:600;display:flex;justify-content:space-between;margin-bottom:6px}
+.sim-lb b{color:var(--warm);font-variant-numeric:tabular-nums}
+.sim input[type=range]{width:100%;accent-color:var(--brand);margin-bottom:16px}
+.sim-out{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:6px}
+.sim-big{font-family:var(--font-display);font-weight:800;font-size:clamp(22px,5.5vw,30px);letter-spacing:-.02em;
+  color:var(--warm);line-height:1.2;margin-bottom:5px}
+.sim-big.bom{color:var(--pos)} .sim-big.ruim{color:var(--neg)} .sim-big.ouro{color:var(--gold-2)}
+.sim-txt{font-size:13px;color:var(--s500);line-height:1.6}
+.sim-txt b{color:var(--warm)}
+
+/* linha do tempo do ciclo do cartão */
+.tl{position:relative;height:56px;margin:10px 0 14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tl-fill{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(28,100,240,.32),rgba(201,169,104,.32));
+  border-right:2px solid var(--gold);transition:left .25s,width .25s}
+.tl-mk{position:absolute;top:0;bottom:0;width:2px;background:var(--line2)}
+.tl-mk span{position:absolute;top:3px;left:4px;font-size:9px;color:var(--s400);white-space:nowrap}
+.tl-cp{position:absolute;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;
+  background:var(--brand);border:2px solid var(--warm);transition:left .25s;z-index:2}
+.tl-lg{display:flex;gap:14px;font-size:11px;color:var(--s400);flex-wrap:wrap}
+.tl-lg i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:4px}
+
+.faq{border-top:1px solid var(--line);padding:14px 0}
+.faq b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:5px}
+.faq span{font-size:13.5px;color:var(--s500)}
+.mn-foot{border-top:1px solid var(--line);margin-top:44px;padding-top:20px;color:var(--s400);font-size:12.5px;text-align:center}
+.mn-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--grad-brand);color:#fff;
+  text-decoration:none;font-weight:700;font-size:14px;padding:14px 26px;border-radius:12px;margin-top:8px;
+  box-shadow:0 10px 30px rgba(28,100,240,.4)}
+</style>
+</head>
+<body>
+
+<header class="mn-top">
+  <a class="brand-lockup" href="index.html" style="text-decoration:none">
+    <span class="brand-mark"><img src="brand/logo.svg?v=0.4" width="28" height="25" alt="VIZIO Money"></span>
+    <span class="brand-word">VIZIO <b>Money</b></span>
+  </a>
+  <nav class="mn-nav">
+    <a href="index.html">Abrir o app</a>
+    <a href="termos.html">Termos</a>
+    <a href="privacidade.html">Privacidade</a>
+  </nav>
+</header>
+
+<main class="mn-wrap">
+
+  <div class="mn-hero">
+    <div class="mn-eyebrow">VIZIO Finance · um produto INPERSON</div>
+    <h1>Como usar o <b>VIZIO Money</b></h1>
+    <p class="mn-sub">Não é só onde clicar. É <b>por que</b> — incluindo o truque do cartão que dá até 40 dias
+    de prazo de graça. Os simuladores aqui funcionam de verdade: mexa neles.</p>
+  </div>
+
+  <div class="mn-sumario">
+    <a href="#comecar">🚀 Comece em 3 passos</a>
+    <a href="#modulos">🧭 Os 4 módulos</a>
+    <a href="#melhor-data">🔑 O truque da melhor data</a>
+    <a href="#fatura">💳 Fatura x Uso do cartão</a>
+    <a href="#parcelas">📆 Parcelas que se espalham</a>
+    <a href="#investir">🌱 Primeiro você se paga</a>
+    <a href="#reflexao">🧠 A IA de Reflexão</a>
+    <a href="#duvidas">❓ Dúvidas rápidas</a>
+  </div>
+
+  <!-- ================= COMEÇAR ================= -->
+  <div class="h2-tag" style="margin-top:44px">Parte 1</div>
+  <h2 id="comecar">Comece em 3 passos</h2>
+  <p>Dá para lançar tudo sem configurar nada. Mas 2 minutos em ⚙️ <b>Ajustes</b> agora é o que separa
+  "planilha bonita" de um app que te avisa das coisas antes de elas acontecerem.</p>
+
+  <div class="mn-card mn-passos">
+    <div class="mn-passo"><div><b>Cadastre seus cartões</b><span>
+      Em ⚙️, informe o <b>dia do vencimento</b> e a <b>melhor data de compra</b> de cada cartão.
+      Sem isso, o app não consegue te dizer em qual fatura cada compra vai cair — e é aí que mora
+      o dinheiro. Não sabe a sua melhor data? Está no app do banco, ou é o dia seguinte ao fechamento.
+    </span></div></div>
+    <div class="mn-passo"><div><b>Lance o que entra</b><span>
+      Em <b>Movimento › Entradas</b>: salário, freela, restituição, aluguel recebido. Tudo que chega.
+    </span></div></div>
+    <div class="mn-passo"><div><b>Lance o que sai — dizendo COMO pagou</b><span>
+      Em <b>Movimento › Gastos</b>. O campo <b>pagamento</b> é o mais importante da tela:
+      <b>Pix/Débito</b> sai da conta na hora; <b>cartão</b> vira fatura no mês seguinte.
+      É esse campo que faz o app enxergar seu futuro.
+    </span></div></div>
+  </div>
+
+  <div class="mn-card ouro">
+    <p style="margin:0">💡 <b>Saldo inicial:</b> só preencha no primeiro mês que você usar. Dali em diante o app
+    passa o saldo sozinho — mas <b>só quando o mês acaba</b>. O saldo do mês corrente ainda vai mudar até
+    o dia 31; jogar ele nos meses futuros criaria um caixa que não existe. E é justamente nesse caixa
+    imaginário que a gente decide gastar.</p>
+  </div>
+
+  <!-- ================= MÓDULOS ================= -->
+  <div class="h2-tag">Parte 2</div>
+  <h2 id="modulos">Os 4 módulos do mês</h2>
+  <p>A tela do mês tem quatro abas. Cada uma responde <b>uma</b> pergunta:</p>
+  <div class="mn-card">
+    <div class="mn-passo" style="counter-reset:none"><div><b>📊 Resumo — "como estou?"</b><span>
+      Panorama do mês e a <b>reflexão da IA</b> sobre seus gastos.</span></div></div>
+    <div class="mn-passo"><div><b>💸 Movimento — "o que entrou e saiu?"</b><span>
+      Entradas, investimentos e gastos. É aqui que você digita no dia a dia.</span></div></div>
+    <div class="mn-passo"><div><b>💳 Cartões — "quanto vou dever?"</b><span>
+      A fatura que vence agora, o uso que está virando a próxima, e as parcelas.</span></div></div>
+    <div class="mn-passo"><div><b>🎯 Orçamento — "estourei?"</b><span>
+      Teto por categoria e o Arco de Clareza. Um <b>número vermelho</b> na aba = categoria estourada.
+      Um <b>ponto dourado</b> em Cartões = tem fatura a pagar.</span></div></div>
+  </div>
+  <p>Se aparecer sinal na aba, é o app puxando seu olho para o que precisa de atenção — você não precisa
+  procurar.</p>
+
+  <!-- ================= MELHOR DATA ================= -->
+  <div class="h2-tag">Parte 3 · o segredo</div>
+  <h2 id="melhor-data">O truque da melhor data de compra</h2>
+  <p>Todo cartão tem um dia de <b>fechamento</b>. Comprar <b>no dia seguinte ao fechamento</b> — a chamada
+  <b>melhor data de compra</b> — joga a compra para o ciclo seguinte. A mesma compra, o mesmo preço,
+  mas você paga <b>até 40 dias depois</b>. De graça.</p>
+  <p>Comprar um dia antes dessa data faz a despesa cair na fatura que está fechando <b>agora</b>.
+  Um dia de diferença, um mês de prazo. <b>Mexa nos controles abaixo e veja acontecer:</b></p>
+
+  <div class="sim">
+    <div class="sim-tt">🔑 Simulador · melhor data de compra</div>
+
+    <div class="sim-lb"><span>Dia da sua compra</span><b id="s1-dia-lb">dia 5</b></div>
+    <input type="range" id="s1-dia" min="1" max="28" value="5">
+
+    <div class="sim-lb"><span>Melhor data de compra do cartão</span><b id="s1-melhor-lb">dia 3</b></div>
+    <input type="range" id="s1-melhor" min="1" max="28" value="3">
+
+    <div class="sim-lb"><span>Dia do vencimento da fatura</span><b id="s1-venc-lb">dia 10</b></div>
+    <input type="range" id="s1-venc" min="1" max="28" value="10">
+
+    <div class="tl" id="s1-tl">
+      <div class="tl-fill" id="s1-fill"></div>
+      <div class="tl-mk" id="s1-mk-melhor"><span>melhor data</span></div>
+      <div class="tl-cp" id="s1-cp"></div>
+    </div>
+    <div class="tl-lg">
+      <span><i style="background:var(--brand)"></i>sua compra</span>
+      <span><i style="background:linear-gradient(90deg,rgba(28,100,240,.5),rgba(201,169,104,.5))"></i>prazo até pagar</span>
+      <span><i style="background:var(--gold)"></i>vencimento</span>
+    </div>
+
+    <div class="sim-out">
+      <div class="sim-big" id="s1-big">—</div>
+      <div class="sim-txt" id="s1-txt">—</div>
+    </div>
+  </div>
+
+  <div class="mn-card ouro">
+    <p style="margin:0">🎁 <b>No app isso é automático.</b> Ao lançar uma compra parcelada, ele já te diz
+    em qual mês a 1ª parcela vai cair — e por quê. Você não precisa fazer conta nenhuma; só precisa ter
+    cadastrado a melhor data em ⚙️.</p>
+  </div>
+
+  <!-- ================= FATURA x USO ================= -->
+  <div class="h2-tag">Parte 4</div>
+  <h2 id="fatura">Fatura x Uso: os dois lados do cartão</h2>
+  <p>Essa é a confusão que mais quebra orçamento. São <b>dois números diferentes</b>, e o app separa
+  os dois de propósito:</p>
+  <div class="mn-card">
+    <h3 style="margin-top:0">💳 Fatura a pagar <span style="color:var(--neg);font-size:13px">— o passado te cobrando</span></h3>
+    <p style="margin-bottom:16px">É o crédito do <b>mês anterior</b>, que vence agora e <b>sai da sua conta hoje</b>.
+    Por isso um mês tranquilo às vezes aperta: a conta chegou depois.</p>
+    <h3>📈 Uso do cartão <span style="color:var(--gold);font-size:13px">— a fatura nascendo</span></h3>
+    <p style="margin:0">É tudo que você passou no crédito <b>neste mês</b>. <b>Ainda não saiu</b> da conta —
+    é a prévia do boleto do mês que vem. Olhar esse número toda semana é o que evita o susto.</p>
+  </div>
+  <div class="mn-card ouro">
+    <p style="margin:0">⚠️ <b>A armadilha:</b> a pessoa olha o saldo da conta, vê dinheiro, e gasta.
+    Mas metade daquele saldo já tem dono — é a fatura que vence semana que vem. <b>Saldo não é o que
+    você tem; é o que você tem menos o que já deve.</b> O app calcula isso para você.</p>
+  </div>
+
+  <!-- ================= PARCELAS ================= -->
+  <div class="h2-tag">Parte 5</div>
+  <h2 id="parcelas">Parcelas que se espalham sozinhas</h2>
+  <p>Lance a compra parcelada <b>uma vez</b>: valor da parcela, número de parcelas e a data.
+  O app espalha por todos os meses, identifica <b>qual parcela</b> cai em cada um (3/10, 4/10…)
+  e monta o <b>Panorama de Parcelamento</b> — as 12 barras que mostram quanto do seu ano
+  já está comprometido.</p>
+  <div class="mn-card ouro">
+    <p style="margin:0">🔥 <b>Para que serve o panorama:</b> barra alta é mês de aperto que você ainda
+    não sabe que vai ter. Vendo isso <b>antes</b>, dá para escolher parcelar em 6 em vez de 10 —
+    ou não parcelar. Depois que a barra existe, ela não negocia.</p>
+  </div>
+
+  <!-- ================= INVESTIR ================= -->
+  <div class="h2-tag">Parte 6</div>
+  <h2 id="investir">Primeiro você se paga</h2>
+  <p>Em <b>Movimento</b>, <b>Entradas</b> e <b>Investir</b> aparecem lado a lado. Não é acaso: a ordem
+  certa é <b>entrou → guarda uma parte → gasta o resto</b>. Guardar o que sobra no fim do mês
+  quase nunca sobra — porque a despesa se expande até ocupar todo o dinheiro disponível.</p>
+  <p>Registre <b>aporte</b> (guardou) e <b>resgate</b> (tirou). A aba <b>Investir</b> mostra tudo:
+  entradas, saídas, o balanço e seu <b>patrimônio</b> crescendo mês a mês. Ver a linha subir é o que
+  segura o hábito quando a motivação acaba.</p>
+
+  <!-- ================= REFLEXÃO ================= -->
+  <div class="h2-tag">Parte 7</div>
+  <h2 id="reflexao">A IA de Reflexão</h2>
+  <p>No <b>Resumo</b>, a IA não te dá bronca. Ela faz uma pergunta que quase ninguém faz:
+  <b>quanto da sua vida custou aquilo?</b></p>
+  <p>Todo gasto tem dois preços: o que está na etiqueta e o <b>tempo de trabalho</b> que ele consumiu.
+  Cadastre o valor da sua hora em ⚙️ (ou deixe em branco e o app estima pela sua renda) e veja:</p>
+
+  <div class="sim">
+    <div class="sim-tt">🧠 Simulador · quanto isso custa da sua vida</div>
+
+    <div class="sim-lb"><span>Um gasto recorrente por mês</span><b id="s2-v-lb">R$ 200,00</b></div>
+    <input type="range" id="s2-v" min="10" max="1500" step="10" value="200">
+
+    <div class="sim-lb"><span>Quanto vale sua hora</span><b id="s2-h-lb">R$ 30,00</b></div>
+    <input type="range" id="s2-h" min="10" max="300" step="5" value="30">
+
+    <div class="sim-out" style="margin-bottom:10px">
+      <div class="sim-big ouro" id="s2-big">—</div>
+      <div class="sim-txt" id="s2-txt">—</div>
+    </div>
+    <div class="sim-out">
+      <div class="sim-txt" id="s2-prazo">—</div>
+    </div>
+  </div>
+
+  <p>A ideia não é te proibir de nada. É te dar a informação <b>antes</b> da decisão — porque
+  "R$ 200 por mês" não assusta ninguém, mas "quase 7 horas do meu mês" muda a conversa.
+  Às vezes vale muito a pena. Às vezes você só nunca tinha visto a conta.</p>
+
+  <!-- ================= DÚVIDAS ================= -->
+  <div class="h2-tag">Parte 8</div>
+  <h2 id="duvidas">Dúvidas rápidas</h2>
+  <div class="mn-card" style="padding-top:4px">
+    <div class="faq" style="border-top:none"><b>Meus dados somem se eu trocar de celular?</b>
+      <span>Não. Com a conta criada, eles ficam na nuvem e te seguem em qualquer aparelho. O selo
+      ☁️ no topo mostra o estado: <b>Salvo na nuvem</b> significa que já subiu.</span></div>
+    <div class="faq"><b>Como atualizo os dados com o app aberto?</b>
+      <span>No celular, <b>puxe a tela para baixo</b> a partir do topo. No PC, clique no selo ☁️.
+      Ele também atualiza sozinho toda vez que você volta para o app.</span></div>
+    <div class="faq"><b>O app acessa minha conta bancária?</b>
+      <span><b>Não.</b> Nunca. Ele não se conecta a banco nenhum, não lê extrato e não movimenta
+      dinheiro. Tudo que ele sabe é o que você digita.</span></div>
+    <div class="faq"><b>O que muda no Pro?</b>
+      <span>O Free abre o mês atual e o próximo. O <b>Pro (R$ 9,90/mês)</b> abre os 12 meses,
+      o panorama de parcelamento, a visão anual e a IA de Reflexão. A mágica do app mora
+      <b>entre</b> os meses — é por isso que o ano inteiro importa.</span></div>
+    <div class="faq"><b>Como cancelo?</b>
+      <span>Sozinho, em 2 toques: sua foto › <b>Assinatura</b> › <b>Gerenciar · cancelar</b>.
+      Sem falar com ninguém. E você tem <b>7 dias</b> de arrependimento com devolução integral.</span></div>
+    <div class="faq"><b>Esqueci minha senha.</b>
+      <span>Use "Esqueci minha senha" na tela de entrada. Ninguém — nem nós — consegue ver sua senha:
+      ela é guardada criptografada e de forma irreversível. É assim que tem que ser.</span></div>
+    <div class="faq"><b>Quero rever este passo a passo dentro do app.</b>
+      <span>Toque no <b>❓</b> no topo. O tour guiado recomeça quando você quiser.</span></div>
+  </div>
+
+  <div style="text-align:center;margin-top:34px">
+    <a class="mn-cta" href="index.html">Abrir o VIZIO Money →</a>
+  </div>
+
+  <div class="mn-foot">VIZIO Money · VIZIO FINANCE · um produto INPERSON</div>
+</main>
+
+<script>
+/* ===== Simulador 1 — melhor data de compra ==========================
+   Mesma regra do app (mesDaFatura): compra a partir da melhor data pula
+   um ciclo. Aqui usamos um mês de 30 dias para a conta ficar legível —
+   a ideia é ensinar a mecânica, não replicar calendário. */
+const $ = id => document.getElementById(id);
+const MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const brl = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* A mecânica real do ciclo, em dias absolutos (mês de 30 dias para caber na
+   cabeça). Fechamento = véspera da melhor data.
+     - comprou ATÉ o fechamento  -> entra na fatura que fecha AGORA
+     - comprou A PARTIR da melhor -> entra na que fecha no mês seguinte
+   E o vencimento é a PRÓXIMA ocorrência do dia `venc` depois do fechamento —
+   que cai no mesmo mês se venc > fechamento, ou no mês seguinte se venc < ele.
+   (Foi exatamente essa parte que eu tinha errado antes, e o simulador chegava
+   a prometer 67 dias de prazo. Cartão nenhum faz isso.) */
+function cicloCartao(dia, melhor, venc){
+  const fecha = melhor - 1;                       // fechamento
+  const pulou = dia > fecha;                      // comprou na melhor data ou depois
+  const fechaAbs = pulou ? fecha + 30 : fecha;    // qual fechamento pega a compra
+  const ateVenc  = venc > fecha ? (venc - fecha) : (30 - fecha + venc);
+  const vencAbs  = fechaAbs + ateVenc;            // 1ª ocorrência do venc após fechar
+  return { pulou, prazo: vencAbs - dia, vencAbs, fechaAbs, mesesAte: Math.floor(vencAbs / 30) };
+}
+
+function sim1(){
+  const dia    = +$('s1-dia').value;
+  const melhor = +$('s1-melhor').value;
+  const venc   = +$('s1-venc').value;
+
+  $('s1-dia-lb').textContent    = 'dia ' + dia;
+  $('s1-melhor-lb').textContent = 'dia ' + melhor;
+  $('s1-venc-lb').textContent   = 'dia ' + venc;
+
+  const r = cicloCartao(dia, melhor, venc);
+  const mesVenc = MES[(6 + r.mesesAte) % 12];      // referência: compra em julho
+  const alt = cicloCartao(r.pulou ? Math.max(1, melhor - 1) : melhor, melhor, venc);
+  const ganho = Math.abs(alt.prazo - r.prazo);
+
+  const big = $('s1-big'), txt = $('s1-txt');
+  big.className = 'sim-big ' + (r.pulou ? 'bom' : 'ruim');
+  big.textContent = r.prazo + (r.prazo === 1 ? ' dia de prazo' : ' dias de prazo');
+  txt.innerHTML = r.pulou
+    ? `Comprando no <b>dia ${dia}</b> (a melhor data é dia ${melhor}), a compra <b>pula o ciclo</b>:
+       só entra na fatura que fecha no mês seguinte e vence em <b>${mesVenc}</b>, dia ${venc}.
+       ✔ São <b>${r.prazo} dias</b> usando o dinheiro do banco de graça.
+       Tivesse comprado 1 dia antes da melhor data, seriam só ${alt.prazo}.`
+    : `Comprando no <b>dia ${dia}</b> (antes da melhor data, dia ${melhor}), ela cai na fatura que
+       <b>fecha agora</b> e vence em <b>${mesVenc}</b>, dia ${venc}. Só <b>${r.prazo} dias</b>.
+       Esperar até o dia ${melhor} te daria <b>${alt.prazo} dias</b> —
+       <b>${ganho} dias a mais</b>, mesma compra, mesmo preço.`;
+
+  /* linha do tempo 0..70 dias */
+  const total = 70;
+  const pos = d => Math.max(0, Math.min(100, (d / total) * 100));
+  $('s1-cp').style.left    = pos(dia) + '%';
+  $('s1-fill').style.left   = pos(dia) + '%';
+  $('s1-fill').style.width  = Math.max(0, pos(r.vencAbs) - pos(dia)) + '%';
+  $('s1-mk-melhor').style.left = pos(melhor) + '%';
+}
+['s1-dia','s1-melhor','s1-venc'].forEach(id => $(id).addEventListener('input', sim1));
+sim1();
+
+/* ===== Simulador 2 — custo de oportunidade em horas de vida ===== */
+function sim2(){
+  const v = +$('s2-v').value, h = +$('s2-h').value;
+  $('s2-v-lb').textContent = brl(v);
+  $('s2-h-lb').textContent = brl(h);
+
+  const horas = v / h;
+  const hMes  = Math.round(horas * 10) / 10;
+  const dias  = Math.round((horas * 12 / 8) * 10) / 10;   // jornada de 8h
+
+  $('s2-big').textContent = hMes.toLocaleString('pt-BR') + (hMes === 1 ? ' hora por mês' : ' horas por mês');
+  $('s2-txt').innerHTML = `Esse gasto consome <b>${hMes.toLocaleString('pt-BR')} horas</b> de trabalho todo mês.
+    No ano, são <b>${dias.toLocaleString('pt-BR')} dias úteis</b> — trabalhados só para pagar isso.`;
+
+  /* curto / médio / longo — juros de 0,9% a.m. (poupança conservadora) */
+  const j = 0.009;
+  const fut = n => v * ((Math.pow(1 + j, n) - 1) / j);
+  $('s2-prazo').innerHTML = `Se em vez de gastar você guardasse esse mesmo valor todo mês:<br>
+    <b>1 ano:</b> ${brl(fut(12))} &nbsp;·&nbsp; <b>5 anos:</b> ${brl(fut(60))} &nbsp;·&nbsp;
+    <b>10 anos:</b> ${brl(fut(120))}<br>
+    <span style="color:var(--s400);font-size:12px">Simulação a 0,9% ao mês. Não é promessa de rendimento —
+    é só a ordem de grandeza da decisão.</span>`;
+}
+['s2-v','s2-h'].forEach(id => $(id).addEventListener('input', sim2));
+sim2();
+</script>
+
+<script>window.VZ_ACCENT='#1C64F0'</script>
+<script src="aura.js?v=3"></script>
+</body>
+</html>
