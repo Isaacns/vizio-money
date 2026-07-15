@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=0.5">
+<link rel="stylesheet" href="brand.css?v=0.6">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* A luz da página vem do MODO AURA v3 (aura.js) — não de gradientes locais. */
@@ -122,6 +122,39 @@ tr:last-child td{border-bottom:none}
 .budcat{font-weight:600;color:var(--s700);font-size:13px}
 .bar{height:6px;border-radius:4px;background:var(--s100);overflow:hidden;margin-top:5px}
 .bar > i{display:block;height:100%;border-radius:4px}
+
+/* Cabeçalho do mês: saldo inicial discreto + data de hoje */
+.vm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 14px}
+.vm-head-l b{font-size:14px;color:var(--ink)}
+.vm-hoje{display:block;font-size:11px;color:var(--gold);font-weight:600;margin-top:1px}
+.vm-head-r{display:flex;align-items:center;gap:8px}
+.vm-head-r label{font-size:11px;color:var(--s500);font-weight:600}
+.vm-head-r input{width:104px;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;
+  background:var(--coal);color:var(--ink);font-size:14px}
+@media(max-width:560px){.vm-head{flex-direction:column;align-items:flex-start;gap:8px}
+  .vm-head-r{width:100%}.vm-head-r input{flex:1}}
+
+/* Alerta de categoria: precisa gritar, não sussurrar */
+.vm-alerta{display:flex;align-items:center;gap:11px;margin:0 0 12px;padding:11px 13px;border-radius:11px;
+  background:rgba(240,97,109,.12);border:1px solid rgba(240,97,109,.45);
+  animation:vmAlerta 2s ease-in-out infinite}
+.vm-alerta-ic{flex:none;width:26px;height:26px;border-radius:50%;background:var(--neg);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:15px}
+.vm-alerta b{color:#FFB3B9;font-size:13px}
+.vm-alerta div div{font-size:11.5px;color:var(--s500)}
+@keyframes vmAlerta{0%,100%{box-shadow:0 0 0 0 rgba(240,97,109,0)}50%{box-shadow:0 0 0 5px rgba(240,97,109,.13)}}
+.budline.estourou .budcat{color:#FFB3B9}
+.tag-estouro{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:#fff;background:var(--neg);border-radius:99px;padding:1px 6px;margin-left:5px;vertical-align:1px}
+
+/* Destaque ao chegar via CTA da IA */
+.vm-destaque{outline:2px solid var(--gold);outline-offset:3px;transition:outline .2s}
+
+/* Mês sem lançamento no gráfico */
+.chart .c.vazio{opacity:.3}
+.f-mini{width:62px;padding:6px 8px;border:1px solid var(--line2);border-radius:7px;background:var(--coal);color:var(--ink);font-size:14px}
+tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 
 /* IA de Reflexão */
 .card.reflex{border-color:rgba(201,169,104,.32)}
@@ -280,6 +313,9 @@ tr:last-child td{border-bottom:none}
   <!-- VIEW: DASHBOARD ANUAL -->
   <div id="viewYear" class="hide"></div>
 
+  <!-- VIEW: INVESTIMENTOS -->
+  <div id="viewInvest" class="hide"></div>
+
   <!-- VIEW: BASE -->
   <div id="viewBase" class="hide"></div>
 </div>
@@ -304,8 +340,12 @@ const KEY='vizio_money_v1';
 const uid=()=>Math.random().toString(36).slice(2,9);
 
 const DEFAULTS = {
-  version:1, plan:'free', year:2026, current:new Date().getMonth(),
-  cards:['C6','Nu','MP','C&A','RCHL'],
+  version:2, plan:'free', year:2026, current:new Date().getMonth(),
+  nome:'',
+  /* Cartão: venc = dia que a fatura vence · melhor = melhor dia de compra
+     (dia seguinte ao fechamento — comprar nele dá o prazo máximo). */
+  cards:[{nome:'C6',venc:10,melhor:1},{nome:'Nu',venc:10,melhor:1},{nome:'MP',venc:10,melhor:1},
+         {nome:'C&A',venc:10,melhor:1},{nome:'RCHL',venc:10,melhor:1}],
   categories:['Moradia','Apartamento','Assinaturas','Saúde','Alimentação','Lazer','Uber','Beleza','Roupas','Presentes','Essencial','Contas de Casa','Educação','Lanches','Imprevistos','Outros'],
   payments:['Pix','Débito'], /* + cartões (crédito) são adicionados dinamicamente */
   budgets:{Moradia:100,Apartamento:3000,Assinaturas:100,'Saúde':200,'Alimentação':600,Lazer:100,Uber:50,Beleza:100,Roupas:100,Presentes:100,Essencial:300,'Contas de Casa':250,'Educação':100,Lanches:80,Imprevistos:150,Outros:50},
@@ -316,12 +356,41 @@ const DEFAULTS = {
 
 let S = load();
 function load(){ try{const r=JSON.parse(localStorage.getItem(KEY)); if(r&&r.version) return migrate(r);}catch(e){} return structuredClone(DEFAULTS); }
-function migrate(r){ for(const k in DEFAULTS) if(!(k in r)) r[k]=structuredClone(DEFAULTS[k]); return r; }
+function migrate(r){
+  for(const k in DEFAULTS) if(!(k in r)) r[k]=structuredClone(DEFAULTS[k]);
+  /* v1 -> v2: cartão era só o nome; agora carrega vencimento e melhor dia. */
+  if(Array.isArray(r.cards) && r.cards.length && typeof r.cards[0]==='string'){
+    r.cards = r.cards.map(n=>({nome:n, venc:10, melhor:1}));
+  }
+  /* v1 -> v2: todo investimento antigo é aporte (não existia resgate). */
+  for(const k in r.months){
+    const mm=r.months[k];
+    if(Array.isArray(mm.investments)) mm.investments.forEach(i=>{ if(!i.tipo) i.tipo='aporte'; });
+  }
+  r.version = 2;
+  return r;
+}
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
 function month(m){ if(!S.months[m]) S.months[m]={opening:null,incomes:[],investments:[],expenses:[]}; return S.months[m]; }
-const creditMethods = () => S.cards;
-const allPayments = () => [...S.payments, ...S.cards];
-const isCredit = pay => S.cards.includes(pay);
+const cardNames   = () => S.cards.map(c=>c.nome);
+const getCard     = n  => S.cards.find(c=>c.nome===n);
+const creditMethods = () => cardNames();
+const allPayments = () => [...S.payments, ...cardNames()];
+const isCredit    = pay => cardNames().includes(pay);
+
+/* Em que mês a compra vira fatura, usando a MELHOR DATA DE COMPRA.
+   Regra real do cartão: a melhor data é o dia seguinte ao fechamento.
+     compra ANTES da melhor data  -> entra na fatura que fecha já, vence mês+1
+     compra A PARTIR da melhor data -> pega o ciclo seguinte, vence mês+2
+   É exatamente por isso que comprar na melhor data dá o prazo máximo. */
+function mesDaFatura(dataISO, cardNome){
+  const d = new Date((dataISO||today(S.current))+'T12:00:00');
+  if(isNaN(d)) return S.current+1;
+  const melhor = +(getCard(cardNome)?.melhor || 1);
+  let m = d.getMonth() + 1;                    // fatura seguinte à compra
+  if(melhor > 1 && d.getDate() >= melhor) m += 1;
+  return m;
+}
 
 /* ---------- ENGINE ---------- */
 function installmentItems(m){ // parcelas ativas no mês m (a partir das compras globais)
@@ -339,18 +408,39 @@ function monthExpenseItems(m){ // gastos avulsos + parcelas do mês
   return [...one, ...ins];
 }
 const incomesTotal = m => month(m).incomes.reduce((s,x)=>s+ +x.value,0);
-const investTotal  = m => month(m).investments.reduce((s,x)=>s+ +x.value,0);
-function cardSpend(card,m){ // crédito lançado no cartão no mês (avulso + parcela)
+
+/* Investimento tem dois sentidos: aporte SAI da conta, resgate VOLTA pra ela. */
+const investAportes  = m => month(m).investments.filter(i=>i.tipo!=='resgate').reduce((s,x)=>s+ +x.value,0);
+const investResgates = m => month(m).investments.filter(i=>i.tipo==='resgate').reduce((s,x)=>s+ +x.value,0);
+const investTotal    = m => investAportes(m) - investResgates(m);   // líquido que sai da conta
+/* Patrimônio investido acumulado até o mês (o que está lá fora, rendendo). */
+const patrimonio = m => { let t=0; for(let i=0;i<=m;i++) t+=investTotal(i); return t; };
+
+/* USO DO CARTÃO no mês m: o que você passou no crédito AGORA.
+   Isto NÃO sai da conta em m — vira a fatura que vence em m+1. */
+function cardSpend(card,m){
   let t=0;
   for(const e of month(m).expenses) if(e.pay===card) t+=+e.value;
   for(const e of installmentItems(m)) if(e.card===card) t+=+e.value;
   return t;
 }
-const faturaCard = (card,m) => m<=0?0:cardSpend(card,m-1); // competência mês anterior
-const faturasTotal = m => S.cards.reduce((s,c)=>s+faturaCard(c,m),0);
+const usoCartaoTotal = m => S.cards.reduce((s,c)=>s+cardSpend(c.nome,m),0);
+
+/* FATURA A PAGAR em m: por competência, é o uso do mês ANTERIOR.
+   Por isso o que você lança hoje nunca aparece aqui — aparece no Uso. */
+const faturaCard   = (card,m) => m<=0?0:cardSpend(card,m-1);
+const faturasTotal = m => S.cards.reduce((s,c)=>s+faturaCard(c.nome,m),0);
+
+/* Mês "vazio" não deve herdar saldo na visão anual: dá falsa sensação de caixa. */
+function mesTemMovimento(m){
+  const mm=month(m);
+  return mm.incomes.length>0 || mm.expenses.length>0 || mm.investments.length>0
+      || installmentItems(m).length>0 || (mm.opening!==null && mm.opening!=='');
+}
 function nonCreditOut(m){ let t=0; for(const e of month(m).expenses) if(!isCredit(e.pay)) t+=+e.value; return t; }
 const cashOut = m => nonCreditOut(m) + faturasTotal(m); // o que sai da conta no mês
 function effOpening(m){ const mm=month(m); if(mm.opening!==null&&mm.opening!=='') return +mm.opening; return m===0?0:saldoFinal(m-1); }
+/* investTotal já é líquido: aporte sai, resgate volta (fica negativo e soma). */
 function saldoFinal(m){ return effOpening(m) + incomesTotal(m) - cashOut(m) - investTotal(m); }
 function categoryReal(cat,m){ let t=0; for(const e of monthExpenseItems(m)) if(e.cat===cat) t+=+e.value; return t; }
 function panorama(){ // 12 meses -> total parcelas + qtd
@@ -405,21 +495,21 @@ function reflexoes(m){
     d:`São <b>${BRL(assin*12)} por ano</b>. Cortar o que você não usou nas últimas 2 semanas já monta parte da sua reserva.`,
     cta:'Revisar assinaturas'});
   const estouradas=S.categories.filter(c=>{const t=+(S.budgets[c]||0);return t>0 && categoryReal(c,m)/t>=1;});
-  if(estouradas.length) out.push({tag:'Alerta', target:'stay',
+  if(estouradas.length) out.push({tag:'Alerta', target:'orcamento',
     t:`${estouradas.length} categoria(s) no limite`,
     d:`<b>${estouradas.slice(0,3).join(', ')}</b> estourou o teto — o Arco de Clareza está cheio. Hora de segurar até o fim do mês.`,
-    cta:'Ver orçamento acima'});
+    cta:'Ver orçamento'});
   const inv=investTotal(m), inc=incomesTotal(m);
   if(inc>0 && inv<inc*0.1){ const sug=inc*0.1;
-    out.push({tag:'Pague-se primeiro', target:'stay',
+    out.push({tag:'Pague-se primeiro', target:'invest',
       t:`Você guardou ${pct(inv,inc)}% da renda`,
       d:`A meta saudável começa em <b>10%</b>. Guardar <b>${BRL(sug)}</b>/mês, investido, vira <b>${BRL(fvMonthly(sug,10,0.10))}</b> em 10 anos.`,
       cta:'Registrar um investimento'}); }
   if(m>0){ const cur=faturasTotal(m), prev=faturasTotal(m-1);
-    if(prev>0 && cur>prev) out.push({tag:'Cartão', target:'stay',
+    if(prev>0 && cur>prev) out.push({tag:'Cartão', target:'cartoes',
       t:`Fatura subiu ${pct(cur-prev,prev)}%`,
       d:`A fatura deste mês (${BRL(cur)}) está maior que a do mês anterior (${BRL(prev)}). Vale conferir o que puxou.`,
-      cta:'Ver cartões acima'}); }
+      cta:'Ver cartões'}); }
   return out.slice(0,4);
 }
 function reflexaoCard(m){
@@ -435,11 +525,24 @@ function reflexaoCard(m){
   c.innerHTML=`<h3><span>✦ Reflexão · IA VIZIO</span><span class="sub">pensar antes de gastar</span></h3>
     <div class="rfx-grid">${body}</div>
     <div class="budmeta" style="margin-top:10px">A IA reflete a partir dos seus próprios dados — curto, médio e longo prazo. Ajuste o valor da sua hora em Cadastros (⚙️).</div>`;
+  /* Antes isto só mostrava "veja o card acima" — um beco sem saída.
+     Agora o CTA leva ao card certo, rola até ele e destaca. */
   c.querySelectorAll('.rfx-cta').forEach(b=>b.onclick=()=>{
-    if(b.dataset.target==='base'){ view='base'; render(); }
-    else toast('Veja o card indicado logo acima ↑');
+    const alvo=b.dataset.target;
+    if(alvo==='base'){ view='base'; render(); return; }
+    if(alvo==='invest'){ vmIrPara('#cardInvest','#v-val'); return; }
+    if(alvo==='orcamento'){ vmIrPara('#cardOrcamento'); return; }
+    if(alvo==='cartoes'){ vmIrPara('#cardFatura'); return; }
   });
   return c;
+}
+/* Leva o usuário até o card, destaca e (se houver) foca o campo. */
+function vmIrPara(sel, foco){
+  const el=document.querySelector(sel); if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('vm-destaque');
+  setTimeout(()=>el.classList.remove('vm-destaque'), 2000);
+  if(foco){ const f=el.querySelector(foco); if(f) setTimeout(()=>f.focus(), 450); }
 }
 
 /* ---------- GATING (Free x Pro) ----------
@@ -465,18 +568,22 @@ function render(){
   document.getElementById('planChip').textContent = isPro()?'Pro':'Free';
   document.getElementById('viewMonth').classList.toggle('hide', view!=='month');
   document.getElementById('viewYear').classList.toggle('hide', view!=='year');
+  document.getElementById('viewInvest').classList.toggle('hide', view!=='invest');
   document.getElementById('viewBase').classList.toggle('hide', view!=='base');
-  if(view==='month') renderMonth();
-  if(view==='year')  renderYear();
-  if(view==='base')  renderBase();
+  if(view==='month')  renderMonth();
+  if(view==='year')   renderYear();
+  if(view==='invest') renderInvest();
+  if(view==='base')   renderBase();
   save();
 }
 
 function renderStrip(){
   const el=document.getElementById('monthStrip'); el.innerHTML='';
-  // botão dashboard
+  // botões de visão: Ano e Investimentos
   const yb=document.createElement('button'); yb.className='mbtn'+(view==='year'?' active':''); yb.textContent='📊 Ano';
   yb.onclick=()=>{view='year';render()}; el.appendChild(yb);
+  const ib=document.createElement('button'); ib.className='mbtn'+(view==='invest'?' active':''); ib.textContent='🌱 Investir';
+  ib.onclick=()=>{view='invest';render()}; el.appendChild(ib);
   MONTHS.forEach((nm,m)=>{
     const b=document.createElement('button');
     const locked=monthLocked(m);
@@ -496,47 +603,67 @@ function renderStrip(){
 /* ---------- VIEW MÊS ---------- */
 function renderMonth(){
   const m=activeMonth, mm=month(m);
-  const sf=saldoFinal(m), open=effOpening(m), inc=incomesTotal(m), out=cashOut(m), inv=investTotal(m);
+  const sf=saldoFinal(m), inc=incomesTotal(m), out=cashOut(m), inv=investTotal(m);
   const host=document.getElementById('viewMonth');
   host.innerHTML='';
 
-  // KPIs
-  const kpi=document.createElement('div'); kpi.className='kpi';
-  kpi.innerHTML=`
-    ${kpiBox('Entradas','var(--pos)',BRL(inc),'▲')}
-    ${kpiBox('Saídas (fatura + à vista)','var(--neg)',BRL(out),'▼')}
-    ${kpiBox('Investido',' var(--brand)',BRL(inv),'◆')}
-    ${kpiBox('Saldo do mês',sf>=0?'var(--pos)':'var(--neg)',BRL(sf), sf>=0?'😌':'⚠️')}`;
-  host.appendChild(kpi);
-
-  // Saldo inicial + título
-  const head=document.createElement('div'); head.className='card'; head.style.marginTop='16px';
-  head.innerHTML=`<h3>${MONTHS[m]} de ${S.year}
-      <span class="sub">Saldo inicial
-        <input id="opening" class="num" style="width:120px;margin-left:6px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px"
-          type="number" step="0.01" placeholder="${BRL(m===0?0:saldoFinal(m-1))}" value="${mm.opening??''}">
-      </span></h3>
-      <div class="budmeta">Saldo inicial ${mm.opening!==null&&mm.opening!==''?'ajustado manualmente':'herdado do mês anterior'} · fecha em <b class="${sf>=0?'pos':'neg'}">${BRL(sf)}</b></div>`;
+  /* Saldo inicial: discreto, ACIMA dos KPIs — é ajuste, não protagonista. */
+  const head=document.createElement('div'); head.className='vm-head';
+  head.innerHTML=`
+    <div class="vm-head-l">
+      <b>${MONTHS[m]} de ${S.year}</b>
+      <span class="vm-hoje">Hoje é ${vmHoje()}</span>
+    </div>
+    <div class="vm-head-r">
+      <label for="opening">Saldo inicial</label>
+      <input id="opening" class="num" type="number" step="0.01"
+        placeholder="${BRL(m===0?0:saldoFinal(m-1)).replace('R$ ','')}" value="${mm.opening??''}">
+      <span class="budmeta">${mm.opening!==null&&mm.opening!==''?'ajustado':'herdado'}</span>
+    </div>`;
   host.appendChild(head);
   head.querySelector('#opening').onchange=e=>{ mm.opening = e.target.value===''?null:+e.target.value; render(); };
 
-  // grid: entradas + gastos
+  // KPIs
+  const kpi=document.createElement('div'); kpi.className='kpi'; kpi.style.marginTop='12px';
+  kpi.innerHTML=`
+    ${kpiBox('Entradas','var(--pos)',BRL(inc),'▲')}
+    ${kpiBox('Saídas (fatura + à vista)','var(--neg)',BRL(out),'▼')}
+    ${kpiBox(inv>=0?'Investido':'Resgatado','var(--brand-2)',BRL(Math.abs(inv)),'◆')}
+    ${kpiBox('Saldo do mês',sf>=0?'var(--pos)':'var(--neg)',BRL(sf), sf>=0?'😌':'⚠️')}`;
+  host.appendChild(kpi);
+
+  /* Entradas + Investimentos lado a lado: primeiro você se paga, depois gasta. */
   const g1=document.createElement('div'); g1.className='grid g2'; g1.style.marginTop='16px';
-  g1.appendChild(entradasCard(m)); g1.appendChild(gastosCard(m));
+  g1.appendChild(entradasCard(m)); g1.appendChild(investCard(m));
   host.appendChild(g1);
+
+  // Gastos ocupa a linha seguinte, sozinho (é a tabela mais densa)
+  const g2=document.createElement('div'); g2.className='grid'; g2.style.marginTop='16px';
+  g2.appendChild(gastosCard(m));
+  host.appendChild(g2);
 
   // IA de Reflexão (diferencial)
   host.appendChild(reflexaoCard(m));
 
   // parceladas + panorama
-  const g2=document.createElement('div'); g2.className='grid g2'; g2.style.marginTop='16px';
-  g2.appendChild(parceladasCard(m)); g2.appendChild(panoramaCard());
-  host.appendChild(g2);
-
-  // orçamento + cartões/fatura + investimentos
-  const g3=document.createElement('div'); g3.className='grid g3'; g3.style.marginTop='16px';
-  g3.appendChild(budgetCard(m)); g3.appendChild(cardsCard(m)); g3.appendChild(investCard(m));
+  const g3=document.createElement('div'); g3.className='grid g2'; g3.style.marginTop='16px';
+  g3.appendChild(parceladasCard(m)); g3.appendChild(panoramaCard());
   host.appendChild(g3);
+
+  /* Os dois lados do cartão, lado a lado: o que vence agora x o que estou criando */
+  const g4=document.createElement('div'); g4.className='grid g2'; g4.style.marginTop='16px';
+  g4.appendChild(cardsCard(m)); g4.appendChild(usoCartaoCard(m));
+  host.appendChild(g4);
+
+  // orçamento
+  const g5=document.createElement('div'); g5.className='grid'; g5.style.marginTop='16px';
+  g5.appendChild(budgetCard(m));
+  host.appendChild(g5);
+}
+/* Data de hoje por extenso, curta */
+function vmHoje(){
+  const d=new Date();
+  return `${String(d.getDate()).padStart(2,'0')} de ${MONTHS[d.getMonth()]}`;
 }
 function kpiBox(lab,color,val,ic){
   return `<div class="box"><div class="lab"><span class="dot" style="background:${color}"></span>${lab}</div>
@@ -609,18 +736,35 @@ function parceladasCard(m){
     <div class="addrow">
       <input class="f-desc" id="p-desc" placeholder="Descrição (ex.: Celular pai)">
       <select class="f-sel" id="p-cat">${S.categories.map(x=>`<option>${x}</option>`).join('')}</select>
-      <select class="f-sel" id="p-card">${S.cards.map(x=>`<option>${x}</option>`).join('')}</select>
+      <select class="f-sel" id="p-card">${S.cards.map(x=>`<option>${esc(x.nome)}</option>`).join('')}</select>
+      <input type="date" class="f-sm" id="p-data" title="Data da compra">
       <input class="f-num num" id="p-val" type="number" step="0.01" placeholder="valor/parcela">
-      <select class="f-sm" id="p-start">${MONTHS.map((x,i)=>`<option value="${i}" ${i===m?'selected':''}>${MABBR[i]}</option>`).join('')}</select>
       <input class="f-sm num" id="p-n" type="number" min="1" max="48" placeholder="nº parc.">
       <button class="btn btn-sm" id="p-add">Adicionar</button>
-    </div>`;
+    </div>
+    <div class="budmeta" id="p-hint" style="margin-top:6px">A 1ª parcela é definida sozinha pela <b>melhor data de compra</b> do cartão.</div>`;
   c.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{S.purchases=S.purchases.filter(x=>x.id!==b.dataset.id);render()});
+
+  /* Mostra ao vivo em que mês a 1ª parcela vai cair — o usuário entende a regra. */
+  const prever=()=>{
+    const d=c.querySelector('#p-data').value, card=c.querySelector('#p-card').value;
+    const h=c.querySelector('#p-hint');
+    if(!d){ h.innerHTML='A 1ª parcela é definida sozinha pela <b>melhor data de compra</b> do cartão.'; return; }
+    const cd=getCard(card), mf=mesDaFatura(d,card);
+    const dia=new Date(d+'T12:00:00').getDate(), depois = (cd?.melhor||1)>1 && dia>=(cd?.melhor||1);
+    h.innerHTML = `1ª parcela em <b>${MONTHS[Math.min(11,mf)]||'Janeiro'}</b>. ` +
+      (depois ? `Comprou a partir do dia ${cd.melhor} (melhor data) — caiu no ciclo seguinte, com mais prazo. ✔`
+              : `Comprou antes do dia ${cd?.melhor||1} — entra na fatura que fecha agora.`);
+  };
+  c.querySelector('#p-data').onchange=prever; c.querySelector('#p-card').onchange=prever;
+
   c.querySelector('#p-add').onclick=()=>{
     const de=c.querySelector('#p-desc').value.trim(),cat=c.querySelector('#p-cat').value,card=c.querySelector('#p-card').value,
-      v=parseFloat(c.querySelector('#p-val').value),start=+c.querySelector('#p-start').value,n=parseInt(c.querySelector('#p-n').value);
+      data=c.querySelector('#p-data').value, v=parseFloat(c.querySelector('#p-val').value),n=parseInt(c.querySelector('#p-n').value);
     if(!de||!(v>0)||!(n>0))return toast('Preencha descrição, valor da parcela e nº de parcelas');
-    S.purchases.push({id:uid(),desc:de,cat,card,value:v,parcelas:n,start}); toast(`Parcelamento em ${n}x criado ✨`); render();
+    const start=Math.min(11, mesDaFatura(data, card));   /* automático pela melhor data */
+    S.purchases.push({id:uid(),desc:de,cat,card,value:v,parcelas:n,start,data:data||today(m)});
+    toast(`${n}x a partir de ${MABBR[start]} ✨`); render();
   };
   return c;
 }
@@ -639,50 +783,106 @@ function panoramaCard(){
 }
 
 function budgetCard(m){
-  const c=document.createElement('div'); c.className='card';
+  const c=document.createElement('div'); c.className='card'; c.id='cardOrcamento';
+  const estouradas=S.categories.filter(cat=>{const t=+(S.budgets[cat]||0);return t>0 && categoryReal(cat,m)/t>=1;});
   const lines=S.categories.map(cat=>{
     const teto=+ (S.budgets[cat]||0), real=categoryReal(cat,m), r=teto?real/teto:0, mo=moon(r);
-    return `<div class="budline">
-      <div><div class="budcat">${esc(cat)}</div>
+    const estourou = teto>0 && r>=1;
+    return `<div class="budline${estourou?' estourou':''}">
+      <div><div class="budcat">${esc(cat)}${estourou?' <span class="tag-estouro">estourou</span>':''}</div>
         <div class="bar"><i style="width:${Math.min(100,r*100)}%;background:${barColor(r)}"></i></div></div>
       <div class="budmeta num" style="text-align:right">${BRL(real)}<br><span style="opacity:.7">de ${teto?BRL(teto):'—'}</span></div>
       <div class="arc" title="${mo.label}">${clarityArc(r)}</div>
     </div>`;
   }).join('');
-  c.innerHTML=`<h3>Orçamento por categoria <span class="sub">Arco de Clareza = quanto do teto já foi</span></h3>${lines}
-    <div class="budmeta" style="margin-top:10px">O arco dourado se completa conforme você usa o teto — cheio = no limite. Ajuste os tetos em Cadastros.</div>`;
+  /* Alerta que realmente chama atenção: pulsa e fica no topo do card. */
+  const alerta = estouradas.length ? `<div class="vm-alerta">
+      <span class="vm-alerta-ic">!</span>
+      <div><b>${estouradas.length} categoria${estouradas.length>1?'s':''} no limite</b>
+      <div>${esc(estouradas.slice(0,3).join(' · '))}${estouradas.length>3?' e mais…':''}</div></div>
+    </div>` : '';
+  c.innerHTML=`<h3>Orçamento por categoria <span class="sub">Arco de Clareza = quanto do teto já foi</span></h3>
+    ${alerta}${lines}
+    <div class="addrow" style="margin-top:12px">
+      <input class="f-desc" id="oc-nova" placeholder="Nova categoria (ex.: Pets)">
+      <input class="f-num num" id="oc-teto" type="number" step="1" placeholder="teto R$">
+      <button class="btn btn-sm" id="oc-add">Criar</button>
+    </div>
+    <div class="budmeta" style="margin-top:8px">O arco dourado se completa conforme você usa o teto — cheio = no limite.</div>`;
+  c.querySelector('#oc-add').onclick=()=>{
+    const n=c.querySelector('#oc-nova').value.trim(), t=parseFloat(c.querySelector('#oc-teto').value);
+    if(!n) return toast('Dê um nome à categoria');
+    if(!S.categories.includes(n)) S.categories.push(n);
+    S.budgets[n] = t>0 ? t : 0;
+    toast(`Categoria "${n}" criada`); render();
+  };
   return c;
 }
 
+/* MÓDULO 1 — o que SAI da conta agora: a fatura fechada no mês anterior.
+   De propósito não mostra nada do mês corrente: isso é o Uso (módulo 2). */
 function cardsCard(m){
-  const c=document.createElement('div'); c.className='card';
-  const rows=S.cards.map(cd=>`<tr><td><b>${esc(cd)}</b></td>
-     <td class="num">${BRL(cardSpend(cd,m))}<div class="budmeta">gasto no mês</div></td>
-     <td class="num neg">${BRL(faturaCard(cd,m))}<div class="budmeta">fatura a pagar</div></td></tr>`).join('');
-  c.innerHTML=`<h3>💳 Cartões & fatura <span class="sub num">${BRL(faturasTotal(m))}</span></h3>
-     <table><thead><tr><th>Cartão</th><th>Gasto (mês)</th><th>Fatura (a pagar)</th></tr></thead><tbody>${rows}</tbody></table>
-     <div class="budmeta" style="margin-top:8px">A <b>fatura a pagar</b> é o crédito do mês anterior (competência) — o que vence agora.</div>`;
+  const c=document.createElement('div'); c.className='card'; c.id='cardFatura';
+  const ref = m>0 ? MONTHS[m-1] : '—';
+  const rows=S.cards.map(cd=>{
+    const f=faturaCard(cd.nome,m);
+    return `<tr><td><b>${esc(cd.nome)}</b><div class="budmeta">vence dia ${cd.venc||10}</div></td>
+     <td class="num ${f>0?'neg':''}">${BRL(f)}</td></tr>`;
+  }).join('');
+  const tot=faturasTotal(m);
+  c.innerHTML=`<h3>💳 Fatura a pagar <span class="sub num neg">${BRL(tot)}</span></h3>
+     <div class="budmeta" style="margin-bottom:8px">Competência de <b>${ref}</b> — o crédito daquele mês vence agora e sai da sua conta.</div>
+     <table><thead><tr><th>Cartão</th><th>Valor a pagar</th></tr></thead><tbody>${rows}</tbody></table>
+     ${tot===0?`<div class="budmeta" style="margin-top:8px">Nada a pagar: não há crédito lançado em ${ref}.</div>`:''}`;
+  return c;
+}
+
+/* MÓDULO 2 — o que você está passando no crédito AGORA.
+   Não sai da conta neste mês: é a prévia da fatura que vence no próximo. */
+function usoCartaoCard(m){
+  const c=document.createElement('div'); c.className='card'; c.id='cardUso';
+  const prox = m<11 ? MONTHS[m+1] : 'Janeiro';
+  const rows=S.cards.map(cd=>{
+    const u=cardSpend(cd.nome,m);
+    return `<tr><td><b>${esc(cd.nome)}</b><div class="budmeta">melhor compra: dia ${cd.melhor||1}</div></td>
+     <td class="num ${u>0?'warn':''}">${BRL(u)}</td></tr>`;
+  }).join('');
+  const tot=usoCartaoTotal(m);
+  c.innerHTML=`<h3>📈 Uso do cartão <span class="sub num warn">${BRL(tot)}</span></h3>
+     <div class="budmeta" style="margin-bottom:8px">Previsão da fatura que vence em <b>${prox}</b>. Tudo que você passar no crédito neste mês cai aqui.</div>
+     <table><thead><tr><th>Cartão</th><th>Usado no mês</th></tr></thead><tbody>${rows}</tbody></table>
+     ${tot>0?`<div class="budmeta" style="margin-top:8px">Este valor <b>ainda não saiu</b> da sua conta — ele vira a fatura de ${prox}.</div>`:''}`;
   return c;
 }
 
 function investCard(m){
-  const c=document.createElement('div'); c.className='card';
-  const rows=month(m).investments.map((x,i)=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.place)}</td>
-     <td class="num brandc">${BRL(+x.value)}</td><td><button class="rowdel" data-i="${i}">✕</button></td></tr>`).join('');
-  c.innerHTML=`<h3>🌱 Pensando no futuro <span class="sub num">${BRL(investTotal(m))}</span></h3>
+  const c=document.createElement('div'); c.className='card'; c.id='cardInvest';
+  const rows=month(m).investments.map((x,i)=>{
+    const res = x.tipo==='resgate';
+    return `<tr><td>${fmtDate(x.date)}</td><td>${esc(x.place)}
+       <div class="budmeta">${res?'resgate':'aporte'}</div></td>
+     <td class="num ${res?'neg':'pos'}">${res?'−':'+'} ${BRL(+x.value)}</td>
+     <td><button class="rowdel" data-i="${i}">✕</button></td></tr>`;
+  }).join('');
+  const liq=investTotal(m);
+  c.innerHTML=`<h3>🌱 Pensando no futuro <span class="sub num">${liq>=0?'guardou ':'resgatou '}${BRL(Math.abs(liq))}</span></h3>
+    <div class="budmeta" style="margin-bottom:8px">Primeiro você se paga — depois gasta.</div>
     <table><thead><tr><th>Data</th><th>Onde</th><th>Valor</th><th></th></tr></thead>
     <tbody>${rows||`<tr><td colspan="4" class="empty">Guardou algo? Caixinha, Tesouro, ação… registre aqui.</td></tr>`}</tbody></table>
     <div class="addrow">
       <input type="date" class="f-sm" id="v-date">
       <input class="f-desc" id="v-place" placeholder="Onde (ex.: Caixinha Nu)">
+      <select class="f-sel" id="v-tipo"><option value="aporte">Guardar (aporte)</option><option value="resgate">Resgatar (saída)</option></select>
       <input class="f-num num" id="v-val" type="number" step="0.01" placeholder="0,00">
-      <button class="btn btn-sm" id="v-add">Guardar</button>
+      <button class="btn btn-sm" id="v-add">Registrar</button>
     </div>`;
   c.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{month(m).investments.splice(+b.dataset.i,1);render()});
   c.querySelector('#v-add').onclick=()=>{
-    const d=c.querySelector('#v-date').value,pl=c.querySelector('#v-place').value.trim(),v=parseFloat(c.querySelector('#v-val').value);
+    const d=c.querySelector('#v-date').value,pl=c.querySelector('#v-place').value.trim(),
+      tipo=c.querySelector('#v-tipo').value, v=parseFloat(c.querySelector('#v-val').value);
     if(!pl||!(v>0))return toast('Preencha onde e valor');
-    month(m).investments.push({date:d||today(m),place:pl,value:v}); toast('Investimento guardado 🌱'); render();
+    month(m).investments.push({date:d||today(m),place:pl,value:v,tipo});
+    toast(tipo==='resgate'?'Resgate registrado':'Investimento guardado 🌱'); render();
   };
   return c;
 }
@@ -702,14 +902,22 @@ function renderYear(){
     ${kpiBox('Saldo em Dez',saldoAtual>=0?'var(--pos)':'var(--neg)',BRL(saldoAtual),saldoAtual>=0?'🎉':'⚠️')}`;
   host.appendChild(kpi);
 
-  // chart saldo por mês
+  /* Mês sem lançamento NÃO entra no gráfico: antes ele herdava o saldo e
+     desenhava uma barra cheia, dando a falsa impressão de caixa naquele mês. */
   const chart=document.createElement('div'); chart.className='card'; chart.style.marginTop='16px';
-  const max=Math.max(1,...perMonth.map(Math.abs));
-  chart.innerHTML=`<h3>Saldo por mês <span class="sub">azul = positivo · vermelho = negativo</span></h3>
-    <div class="chart">${perMonth.map((v,m)=>`<div class="c">
-      <div style="font-size:9px;color:var(--s400)" class="num">${v?BRL(v).replace('R$ ',''):''}</div>
-      <i style="height:${Math.abs(v)/max*100}%;background:${v>=0?'var(--grad-brand)':'var(--neg)'}"></i>
-      <div class="lb">${MABBR[m]}</div></div>`).join('')}</div>`;
+  const vivos=[...Array(12)].map((_,m)=>mesTemMovimento(m));
+  const max=Math.max(1,...perMonth.filter((_,m)=>vivos[m]).map(Math.abs));
+  chart.innerHTML=`<h3>Saldo por mês <span class="sub">só meses com lançamento</span></h3>
+    <div class="chart">${perMonth.map((v,m)=>{
+      if(!vivos[m]) return `<div class="c vazio"><div style="font-size:9px">&nbsp;</div>
+        <i style="height:3px;background:var(--line2)" title="sem lançamentos"></i>
+        <div class="lb">${MABBR[m]}</div></div>`;
+      return `<div class="c">
+        <div style="font-size:9px;color:var(--s400)" class="num">${v?BRL(v).replace('R$ ',''):''}</div>
+        <i style="height:${Math.abs(v)/max*100}%;background:${v>=0?'var(--grad-brand)':'var(--neg)'}"></i>
+        <div class="lb">${MABBR[m]}</div></div>`;
+    }).join('')}</div>
+    <div class="budmeta" style="margin-top:8px">Meses apagados ainda não têm lançamento — o saldo não é replicado neles de propósito.</div>`;
   host.appendChild(chart);
 
   // parcelas do ano + top categorias
@@ -736,21 +944,106 @@ function renderYear(){
   }
 }
 
+/* ---------- VIEW INVESTIMENTOS ---------- */
+function renderInvest(){
+  const host=document.getElementById('viewInvest'); host.innerHTML='';
+  let apo=0, res=0;
+  for(let m=0;m<12;m++){ apo+=investAportes(m); res+=investResgates(m); }
+  const bal=apo-res;
+
+  const kpi=document.createElement('div'); kpi.className='kpi';
+  kpi.innerHTML=`
+    ${kpiBox('Aportes no ano','var(--pos)',BRL(apo),'▲')}
+    ${kpiBox('Resgates no ano','var(--neg)',BRL(res),'▼')}
+    ${kpiBox('Balanço (investido)',bal>=0?'var(--gold)':'var(--neg)',BRL(bal),'◆')}
+    ${kpiBox('Guardado por mês','var(--brand-2)',BRL(apo/12),'~')}`;
+  host.appendChild(kpi);
+
+  /* Evolução do patrimônio acumulado — mês a mês, só onde houve movimento */
+  const vivos=[...Array(12)].map((_,m)=>month(m).investments.length>0);
+  const acum=[...Array(12)].map((_,m)=>patrimonio(m));
+  const max=Math.max(1,...acum.map(Math.abs));
+  const ev=document.createElement('div'); ev.className='card'; ev.style.marginTop='16px';
+  ev.innerHTML=`<h3>Patrimônio investido <span class="sub">acumulado, mês a mês</span></h3>
+    <div class="chart">${acum.map((v,m)=>`<div class="c${vivos[m]||v!==0?'':' vazio'}">
+      <div style="font-size:9px;color:var(--s400)" class="num">${v?BRL(v).replace('R$ ',''):''}</div>
+      <i style="height:${Math.abs(v)/max*100}%;background:${v>=0?'var(--grad-gold)':'var(--neg)'}"></i>
+      <div class="lb">${MABBR[m]}</div></div>`).join('')}</div>`;
+  host.appendChild(ev);
+
+  /* Extrato completo: toda entrada e saída, com o balanço */
+  const linhas=[];
+  for(let m=0;m<12;m++) month(m).investments.forEach((x,i)=>linhas.push({...x,m,i}));
+  linhas.sort((a,b)=> (a.date||'').localeCompare(b.date||'') );
+  const ext=document.createElement('div'); ext.className='card'; ext.style.marginTop='16px';
+  ext.innerHTML=`<h3>Extrato de investimentos <span class="sub num">${linhas.length} lançamento(s)</span></h3>
+    <table><thead><tr><th>Data</th><th>Mês</th><th>Onde</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
+    <tbody>${linhas.length? linhas.map(x=>{
+      const r=x.tipo==='resgate';
+      return `<tr><td>${fmtDate(x.date)}</td><td>${MABBR[x.m]}</td><td>${esc(x.place)}</td>
+        <td><span class="tag ${r?'':'credit'}">${r?'resgate':'aporte'}</span></td>
+        <td class="num ${r?'neg':'pos'}">${r?'−':'+'} ${BRL(+x.value)}</td>
+        <td><button class="rowdel" data-m="${x.m}" data-i="${x.i}">✕</button></td></tr>`;
+    }).join('') : `<tr><td colspan="6" class="empty">Nenhum investimento ainda. Comece pelo mês atual — primeiro você se paga.</td></tr>`}</tbody>
+    ${linhas.length?`<tfoot><tr>
+      <td colspan="4"><b>Balanço</b></td>
+      <td class="num" style="color:var(--gold);font-weight:700">${BRL(bal)}</td><td></td></tr></tfoot>`:''}
+    </table>`;
+  ext.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{
+    month(+b.dataset.m).investments.splice(+b.dataset.i,1); render();
+  });
+  host.appendChild(ext);
+}
+
 /* ---------- VIEW BASE ---------- */
 function renderBase(){
   const host=document.getElementById('viewBase'); host.innerHTML='';
+
+  /* Meus dados — a "página inicial" de configuração */
+  const nc=document.createElement('div'); nc.className='card'; nc.style.marginBottom='16px';
+  nc.innerHTML=`<h3>👤 Meus dados <span class="sub">${vmHoje()}</span></h3>
+    <div class="addrow">
+      <input class="f-desc" id="me-nome" placeholder="Seu nome" value="${esc(S.nome||'')}">
+      <input class="f-num num" id="me-hora" type="number" step="0.01" placeholder="R$/hora" value="${S.hourlyWage??''}">
+      <button class="btn btn-sm" id="me-save">Salvar</button>
+    </div>
+    <div class="budmeta" style="margin-top:6px">O valor da hora é o que a IA usa para traduzir gasto em tempo de trabalho. Em branco = estimado pela renda (${BRL(estHourly())}/h).</div>`;
+  nc.querySelector('#me-save').onclick=()=>{
+    S.nome = nc.querySelector('#me-nome').value.trim();
+    const h = nc.querySelector('#me-hora').value;
+    S.hourlyWage = h===''?null:+h;
+    toast('Dados salvos'); render();
+  };
+  host.appendChild(nc);
+
   const wrap=document.createElement('div'); wrap.className='grid g2';
-  // cartões
+  // cartões — agora com vencimento e melhor data de compra
   const cc=document.createElement('div'); cc.className='card';
-  cc.innerHTML=`<h3>💳 Cartões</h3>${S.cards.map(c=>`<div class="budline"><div class="budcat">${esc(c)}</div><div></div>
-     <button class="rowdel" data-c="${esc(c)}">✕</button></div>`).join('')}
-     <div class="addrow"><input class="f-desc" id="c-name" placeholder="Nome do cartão (ex.: Nubank)"><button class="btn btn-sm" id="c-add">Adicionar</button></div>
-     ${cardsLimited()?`<div class="budmeta" style="margin-top:8px">Free: até 2 cartões. <a href="#" onclick="paywall();return false" style="color:var(--brand)">Vire Pro</a> para ilimitado.</div>`:''}`;
-  cc.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{S.cards=S.cards.filter(x=>x!==b.dataset.c);render()});
+  cc.innerHTML=`<h3>💳 Cartões <span class="sub">vencimento e melhor data</span></h3>
+    <table><thead><tr><th>Cartão</th><th>Vence dia</th><th>Melhor compra</th><th></th></tr></thead><tbody>
+    ${S.cards.map((c,i)=>`<tr>
+      <td><b>${esc(c.nome)}</b></td>
+      <td><input class="num f-mini" type="number" min="1" max="31" data-venc="${i}" value="${c.venc||10}"></td>
+      <td><input class="num f-mini" type="number" min="1" max="31" data-melhor="${i}" value="${c.melhor||1}"></td>
+      <td><button class="rowdel" data-c="${esc(c.nome)}">✕</button></td></tr>`).join('')}
+    </tbody></table>
+     <div class="addrow">
+       <input class="f-desc" id="c-name" placeholder="Nome (ex.: Nubank)">
+       <input class="f-sm num" id="c-venc" type="number" min="1" max="31" placeholder="vence">
+       <input class="f-sm num" id="c-melhor" type="number" min="1" max="31" placeholder="melhor">
+       <button class="btn btn-sm" id="c-add">Adicionar</button>
+     </div>
+     <div class="budmeta" style="margin-top:8px">A <b>melhor data de compra</b> é o dia seguinte ao fechamento — comprar nela dá o prazo máximo. O app usa isso para saber em que mês cada parcela cai.</div>
+     ${cardsLimited()?`<div class="budmeta" style="margin-top:6px">Free: até 2 cartões. <a href="#" onclick="paywall();return false" style="color:var(--brand-2)">Vire Pro</a> para ilimitado.</div>`:''}`;
+  cc.querySelectorAll('.rowdel').forEach(b=>b.onclick=()=>{S.cards=S.cards.filter(x=>x.nome!==b.dataset.c);render()});
+  cc.querySelectorAll('[data-venc]').forEach(inp=>inp.onchange=()=>{S.cards[+inp.dataset.venc].venc=+inp.value||10;save();toast('Vencimento atualizado')});
+  cc.querySelectorAll('[data-melhor]').forEach(inp=>inp.onchange=()=>{S.cards[+inp.dataset.melhor].melhor=+inp.value||1;save();toast('Melhor data atualizada')});
   cc.querySelector('#c-add').onclick=()=>{
-    const n=cc.querySelector('#c-name').value.trim(); if(!n)return;
+    const n=cc.querySelector('#c-name').value.trim(); if(!n)return toast('Dê um nome ao cartão');
     if(cardsLimited()&&S.cards.length>=2)return paywall('Cartões ilimitados são Pro');
-    if(!S.cards.includes(n))S.cards.push(n); toast('Cartão adicionado'); render();
+    if(cardNames().includes(n))return toast('Já existe um cartão com esse nome');
+    S.cards.push({nome:n, venc:+cc.querySelector('#c-venc').value||10, melhor:+cc.querySelector('#c-melhor').value||1});
+    toast('Cartão adicionado'); render();
   };
   wrap.appendChild(cc);
   // categorias + orçamento
@@ -845,12 +1138,16 @@ function loadDemo(){
     {date:'2026-07-11',desc:'Mercado',cat:'Alimentação',pay:'C6',value:104.05},
     {date:'2026-07-09',desc:'iFood',cat:'Lazer',pay:'C6',value:35},
     {date:'2026-07-04',desc:'Mat. Construção',cat:'Moradia',pay:'C6',value:115}];
-  mm.investments=[{date:'2026-07-02',place:'Caixinha Nu',value:200}];
+  mm.investments=[{date:'2026-07-02',place:'Caixinha Nu',value:200,tipo:'aporte'}];
+  /* junho com crédito, para a Fatura a pagar de julho não nascer zerada */
+  const jun=month(5);
+  jun.expenses=[{date:'2026-06-18',desc:'Mercado',cat:'Alimentação',pay:'C6',value:243.10},
+                {date:'2026-06-22',desc:'Farmácia',cat:'Saúde',pay:'Nu',value:96.40}];
   S.purchases=[
-    {id:uid(),desc:'Celular pai',cat:'Presentes',card:'MP',value:89.87,parcelas:24,start:6},
-    {id:uid(),desc:'Televisão',cat:'Outros',card:'MP',value:229.80,parcelas:10,start:6},
-    {id:uid(),desc:'Perfume Versace',cat:'Beleza',card:'C6',value:112.37,parcelas:8,start:6},
-    {id:uid(),desc:'Conj. Academia',cat:'Roupas',card:'MP',value:179.29,parcelas:2,start:6}];
+    {id:uid(),desc:'Celular pai',cat:'Presentes',card:'MP',value:89.87,parcelas:24,start:6,data:'2026-06-25'},
+    {id:uid(),desc:'Televisão',cat:'Outros',card:'MP',value:229.80,parcelas:10,start:6,data:'2026-06-14'},
+    {id:uid(),desc:'Perfume Versace',cat:'Beleza',card:'C6',value:112.37,parcelas:8,start:6,data:'2026-06-10'},
+    {id:uid(),desc:'Conj. Academia',cat:'Roupas',card:'MP',value:179.29,parcelas:2,start:6,data:'2026-06-28'}];
   activeMonth=6; view='month'; toast('Exemplo de Julho carregado ✨'); render();
 }
 
