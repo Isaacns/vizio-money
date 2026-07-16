@@ -9,7 +9,7 @@
    antigo depois de um deploy). Cache-first é ótimo para asset imutável
    e péssimo para app que muda toda hora. Invertido de propósito.
    ============================================================ */
-const CACHE = 'vizio-money-v1.4';
+const CACHE = 'vizio-money-v2.0';
 const ASSETS = [
   './', './index.html', './landing.html', './brand.css', './aura.js', './auth.js', './tour.js',
   './termos.html', './privacidade.html', './manual.html',

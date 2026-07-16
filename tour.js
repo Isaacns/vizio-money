@@ -15,47 +15,45 @@
  * ======================================================================== */
 const VM_TOUR_KEY = 'vm_tour_v1';
 
+/* Os passos seguem a ESTRUTURA NOVA (home = herói + feed, nav de 5 itens).
+   As âncoras antigas ([data-mod=…], #cardFatura na home) morreram junto com as
+   abas de módulo — tour apontando para elemento que não existe mais só ensina
+   que o app está quebrado. */
 const TOUR = [
   {
     sel: null,
     titulo: 'Bem-vindo ao VIZIO Money',
-    txt: 'Em 6 passos você vai saber usar tudo — inclusive o truque do cartão que quase ninguém conhece. Leva um minuto.',
+    txt: 'Cinco passos, um minuto — e no fim você vai saber o truque do cartão que dá até 40 dias de prazo de graça.',
     cta: 'Bora'
   },
   {
-    sel: '#monthStrip',
-    titulo: 'O ano inteiro, aqui',
-    txt: 'Cada mês é um capítulo. O que você lança num mês <b>conversa com os outros</b>: parcela se espalha, fatura nasce no mês seguinte. É isso que planilha não faz.',
+    sel: '.heroi',
+    titulo: 'A resposta que importa',
+    txt: 'Esse número é <b>o que sobra de verdade</b>: já descontou a fatura que vence e o que você guardou. O saldo do banco não faz essa conta — e é por isso que ele engana.',
     view: 'month'
   },
   {
-    sel: '[data-mod="movimento"]',
-    titulo: 'Primeiro você se paga',
-    txt: 'Em <b>Movimento</b>, <b>Entradas</b> e <b>Investir</b> ficam lado a lado — de propósito. A ordem certa é: entrou → <b>guarda uma parte</b> → gasta o resto. Guardar o que sobra quase nunca sobra.',
-    view: 'month', mod: 'movimento'
+    sel: '#fab',
+    titulo: 'Tudo começa aqui',
+    txt: 'Um botão só. Gasto, entrada, dinheiro guardado ou compra parcelada — toque no <b>+</b>, diga o que foi, pronto. O app cuida do resto.',
+    view: 'month'
   },
   {
-    sel: '#cardFatura',
-    titulo: 'Fatura é o passado te cobrando',
-    txt: 'O que aparece aqui é o crédito do <b>mês anterior</b>, que vence agora e <b>sai da sua conta</b>. Por isso o mês que parecia tranquilo às vezes aperta: a conta chegou depois.',
-    view: 'month', mod: 'cartoes'
+    sel: '#monthStrip',
+    titulo: 'Cada mês, um capítulo',
+    txt: 'As setas trocam de mês; toque no nome para ir direto a qualquer um. O que você lança num mês <b>conversa com os outros</b> — parcela se espalha, fatura nasce no mês seguinte. Planilha não faz isso.',
+    view: 'month'
   },
   {
-    sel: '#cardUso',
-    titulo: 'Uso é a fatura nascendo',
-    txt: 'Tudo que você passa no crédito <b>hoje</b> cai aqui — e ainda <b>não saiu</b> da conta. É a prévia do boleto do mês que vem. Olhar isso todo dia é o que evita o susto.',
-    view: 'month', mod: 'cartoes'
-  },
-  {
-    sel: '#cardsCard, #cardFatura',
-    titulo: 'O truque: a melhor data de compra',
-    txt: 'Comprar <b>a partir da melhor data</b> joga a compra para o ciclo seguinte — até <b>40 dias</b> de prazo, de graça. Cadastre a data em ⚙️ e o app passa a te avisar em qual fatura cada compra vai cair.',
-    view: 'month', mod: 'cartoes'
+    sel: '#cardUso, #cardFatura',
+    titulo: 'Os dois lados do cartão',
+    txt: '<b>Fatura</b> é o passado te cobrando: o crédito do mês anterior, saindo da conta agora. <b>Uso</b> é a fatura nascendo — o que você passou hoje e ainda não pagou.<br><br>E o segredo: comprar <b>a partir da melhor data</b> joga a compra para o ciclo seguinte. Cadastre a data em ⚙️ e o app avisa em qual fatura cada compra cai.',
+    view: 'cartoes'
   },
   {
     sel: '#bottomNav, #sideNav',
     titulo: 'O resto do caminho',
-    txt: '<b>Investir</b> mostra seu patrimônio crescendo. <b>Ano</b> mostra os 12 meses de uma vez. <b>Ajustes</b> é onde ficam cartões, categorias e tetos.<br><br>Quiser se aprofundar, o <a href="manual.html" target="_blank">manual completo</a> tem simuladores para brincar. E o <b>❓</b> aqui em cima refaz este tour quando quiser.',
+    txt: '<b>Metas</b> guarda seus tetos de gasto. <b>Guardar</b> mostra seu patrimônio crescendo. <b>Ano</b> mostra os 12 meses de uma vez.<br><br>O <a href="manual.html" target="_blank">manual</a> tem simuladores para brincar, e o <b>❓</b> aqui em cima refaz este tour quando quiser.',
     cta: 'Começar'
   }
 ];
@@ -174,7 +172,7 @@ function vmTourFim() {
   _tourAtivo = false;
   vmTourMarcar();
   document.getElementById('tourMask')?.remove();
-  modulo = 'resumo'; view = 'month'; render();
+  view = 'month'; render();
 }
 
 function vmTourComecar() {

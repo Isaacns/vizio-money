@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=1.4">
+<link rel="stylesheet" href="brand.css?v=2.0">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -148,7 +148,9 @@ tr:last-child td{border-bottom:none}
 .bottomnav,.sidenav{display:none}
 .nav-i{display:flex;align-items:center;border:none;background:transparent;cursor:pointer;
   color:var(--s500);font-family:inherit;font-weight:600;position:relative;transition:color .15s}
-.nav-ic{font-size:19px;line-height:1}
+/* ícone de traço (SVG), não emoji: herda a cor do estado ativo */
+.nav-ic{display:flex;align-items:center;justify-content:center}
+.nav-ic svg{width:22px;height:22px;display:block}
 .nav-i.on{color:var(--gold)}
 
 /* --- Celular: barra fixa embaixo, no alcance do polegar --- */
@@ -156,7 +158,8 @@ tr:last-child td{border-bottom:none}
   .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
     background:rgba(6,8,15,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);
     padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-  .bottomnav .nav-i{flex:1;flex-direction:column;gap:3px;min-height:52px;justify-content:center;font-size:10.5px}
+  .bottomnav .nav-i{flex:1;flex-direction:column;gap:4px;min-height:54px;justify-content:center;font-size:9.5px}
+  .bottomnav .nav-ic svg{width:21px;height:21px}
   .bottomnav .nav-i.on::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%);
     width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--grad-gold)}
   .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
@@ -178,33 +181,17 @@ tr:last-child td{border-bottom:none}
   .topbar{padding-left:26px}
 }
 
-/* --- Abas de módulo (dentro do Mês) --- */
-.mod-tabs{display:flex;gap:6px;margin:14px 0 4px;background:var(--coal);border:1px solid var(--line);
-  border-radius:12px;padding:4px;overflow-x:auto;scrollbar-width:none}
-.mod-tabs::-webkit-scrollbar{display:none}
-.mod-tab{flex:1;min-width:88px;display:flex;align-items:center;justify-content:center;gap:6px;
-  border:none;background:transparent;color:var(--s500);font-family:inherit;font-weight:700;font-size:12.5px;
-  padding:10px 8px;border-radius:9px;cursor:pointer;position:relative;white-space:nowrap;transition:.15s}
-.mod-tab:hover{color:var(--warm)}
-.mod-tab.on{background:var(--grad-brand);color:#fff;box-shadow:0 3px 14px rgba(28,100,240,.4)}
-.mod-ic{font-size:14px}
-.mod-badge{background:var(--neg);color:#fff;font-size:9.5px;font-weight:800;border-radius:99px;
-  padding:1px 5px;min-width:16px;text-align:center}
-.mod-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px rgba(201,169,104,.8)}
-@media(max-width:560px){ .mod-tab span:not(.mod-ic):not(.mod-badge){font-size:11px} .mod-tab{min-width:76px;padding:9px 5px} }
-@media (pointer:coarse),(max-width:820px){ .mod-tab{min-height:44px} }
-
-/* Cabeçalho do mês: saldo inicial discreto + data de hoje */
-.vm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 14px}
-.vm-head-l b{font-size:14px;color:var(--ink)}
-.vm-hoje{display:block;font-size:11px;color:var(--gold);font-weight:600;margin-top:1px}
-.vm-head-r{display:flex;align-items:center;gap:8px}
-.vm-head-r label{font-size:11px;color:var(--s500);font-weight:600}
-.vm-head-r input{width:104px;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;
-  background:var(--coal);color:var(--ink);font-size:14px}
-@media(max-width:560px){.vm-head{flex-direction:column;align-items:flex-start;gap:8px}
-  .vm-head-r{width:100%}.vm-head-r input{flex:1}}
+/* --- Sinais na barra de navegação ---
+   (As abas de módulo e o cabeçalho de mês foram REMOVIDOS no redesign v2:
+   eram uma 2ª camada de menu e uma caixa de ajuste na frente do conteúdo.
+   Os badges sobreviveram porque resolvem um problema real: ao dividir em abas,
+   o que está fora da tela deixa de existir.) */
+.nav-i{position:relative}
+.nav-badge{position:absolute;top:-5px;right:-9px;background:var(--neg);color:#fff;font-size:9.5px;
+  font-weight:800;border-radius:99px;padding:1px 5px;min-width:16px;text-align:center;line-height:1.5}
+.nav-dot{position:absolute;top:-2px;right:-5px;width:7px;height:7px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 7px rgba(201,169,104,.8)}
+.nav-ic{position:relative}
 
 /* Alerta de categoria: precisa gritar, não sussurrar */
 .vm-alerta{display:flex;align-items:center;gap:11px;margin:0 0 12px;padding:11px 13px;border-radius:11px;
@@ -275,6 +262,112 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 .foot{max-width:1080px;margin:24px auto 0;padding:0 18px;color:var(--s400);font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .section-title{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--s500);margin:26px 0 10px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* ==========================================================================
+   LINGUAGEM v2 — "cara de app, não de sistema"
+   Medição do que existia: 129 elementos na 1ª tela, 29 caixas com borda,
+   21 controles, 7,8% de densidade de texto. O feed do Instagram mostra ~12.
+
+   Três regras roubadas de quem já ganhou essa briga:
+   1. SEPARAR COM ESPAÇO, NÃO COM LINHA. Toda borda é atenção cobrada do
+      usuário sem entregar informação. No celular o card perde borda e fundo:
+      vira só conteúdo respirando.
+   2. UMA COISA POR VEZ. Nada lado a lado no celular.
+   3. HIERARQUIA POR TAMANHO, NÃO POR CAIXA. O número importante é grande;
+      o resto é pequeno e cinza. Sem moldura para "destacar".
+   ========================================================================== */
+@media(max-width:820px){
+  .wrap{padding:8px 20px calc(110px + env(safe-area-inset-bottom))}
+  /* o card deixa de ser caixa e vira seção */
+  .card{background:transparent;border:none;box-shadow:none;padding:0;margin-bottom:34px}
+  .card h3{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--s400);margin-bottom:14px}
+  .card h3 .sub{font-size:12px;letter-spacing:0;text-transform:none;color:var(--s500)}
+  .grid{gap:0}
+  /* respiro entre linhas da lista: 11px era aperto de planilha */
+  .card tr{padding:15px 48px 15px 0}
+  .card td{padding:2px 0}
+  .section-title{margin:34px 0 12px}
+}
+
+/* ==========================================================================
+   HOME — o número que respira
+   Antes: grade de 4 KPIs + 12 meses + panorama + abas, tudo antes do 1º real
+   lançado. Agora: UMA resposta ("posso gastar?") e o feed do que aconteceu.
+   ========================================================================== */
+.heroi{text-align:center;padding:26px 0 6px}
+.heroi-lb{font-size:12px;color:var(--s500);font-weight:600;margin-bottom:10px}
+.heroi-n{font-family:var(--font-display);font-weight:800;letter-spacing:-.035em;line-height:1;
+  font-size:clamp(40px,12vw,58px);color:var(--warm)}
+.heroi-n.neg{color:var(--neg)}
+.heroi-ctx{font-size:12.5px;color:var(--s500);line-height:1.7;margin:12px auto 0;max-width:290px}
+.heroi-ctx b{color:var(--s600);font-weight:600}
+
+/* Seletor de mês: ‹ Julho › — 12 botões na tela era coisa de sistema.
+   Toca no nome e escolhe; as setas resolvem 90% dos casos (mês vizinho). */
+.mes-sel{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 0 0}
+.mes-nav{width:40px;height:40px;border:none;background:transparent;color:var(--s500);
+  font-size:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mes-nav:hover{background:var(--s100);color:var(--warm)}
+.mes-nav:disabled{opacity:.25;cursor:default}
+.mes-nome{border:none;background:transparent;color:var(--warm);font-family:var(--font-display);
+  font-weight:700;font-size:15px;letter-spacing:-.01em;padding:8px 12px;border-radius:10px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px}
+.mes-nome:hover{background:var(--s100)}
+.mes-nome .lk{font-size:10px}
+.mes-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+.mes-op{padding:14px 6px;border-radius:12px;border:none;background:var(--s100);color:var(--s600);
+  font-weight:600;font-size:13px;cursor:pointer;min-height:48px}
+.mes-op.on{background:var(--grad-brand);color:#fff;font-weight:700}
+.mes-op:disabled{opacity:.4}
+
+/* FEED — a lista de conversas do WhatsApp, aplicada a dinheiro.
+   Sem caixa, sem borda: ícone, descrição, valor. O olho desce sozinho. */
+.feed-dia{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--s400);margin:26px 0 4px}
+.feed-i{display:flex;align-items:center;gap:14px;padding:13px 0;width:100%;
+  background:transparent;border:none;text-align:left;cursor:pointer;color:inherit;font-family:inherit}
+.feed-ic{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--s100);
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.feed-tx{flex:1;min-width:0}
+.feed-tx b{display:block;font-size:14.5px;color:var(--ink);font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-tx span{display:block;font-size:11.5px;color:var(--s400);margin-top:2px}
+.feed-vl{flex:0 0 auto;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.feed-vl.mais{color:var(--pos)} .feed-vl.menos{color:var(--neg)} .feed-vl.guarda{color:var(--brand-2)}
+.feed-vazio{text-align:center;padding:44px 20px;color:var(--s400);font-size:13.5px;line-height:1.7}
+
+/* Reflexão solo: fio dourado, sem caixa. Antes eram 4 cards empilhados —
+   conselho demais vira barulho e a pessoa não lê nenhum. */
+.rfx-solo{border-left:2px solid var(--gold);padding:2px 0 2px 16px;margin:8px 0 6px}
+.rfx-tag{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.rfx-t{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:5px;letter-spacing:-.01em}
+.rfx-d{font-size:13px;color:var(--s500);line-height:1.65}
+.rfx-d b{color:var(--warm);font-weight:600}
+.rfx-cta{border:none;background:transparent;color:var(--brand-2);font-family:inherit;
+  font-size:13px;font-weight:600;padding:10px 0 2px;cursor:pointer;min-height:44px}
+
+/* Folha do novo lançamento */
+.novo-ops{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.novo-op{display:flex;align-items:center;gap:14px;padding:14px 4px;background:transparent;
+  border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;
+  font-family:inherit;color:inherit;width:100%;min-height:60px}
+.novo-op:last-child{border-bottom:none}
+.novo-op:hover{background:var(--s100)}
+.novo-ic{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--s100);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.novo-ic.mais{color:var(--pos)} .novo-ic.menos{color:var(--neg)} .novo-ic.guarda{color:var(--brand-2)}
+.novo-op b{display:block;font-size:14.5px;color:var(--ink);font-weight:600}
+.novo-op i{display:block;font-size:12px;color:var(--s400);font-style:normal;margin-top:2px}
+
+/* FAB — a única ação primária. WhatsApp tem um botão. Nós tínhamos 21. */
+.fab{position:fixed;right:18px;z-index:45;width:58px;height:58px;border-radius:50%;border:none;
+  background:var(--grad-brand);color:#fff;font-size:27px;font-weight:300;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:0 10px 30px rgba(28,100,240,.5);transition:transform .15s}
+.fab:active{transform:scale(.93)}
+@media(max-width:820px){ .fab{bottom:calc(78px + env(safe-area-inset-bottom))} }
+@media(min-width:821px){ .fab{bottom:28px} }
 
 /* ==========================================================================
    PADRÃO VIZIO · CENTRALIZAÇÃO
@@ -451,12 +544,21 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   <!-- VIEW: INVESTIMENTOS -->
   <div id="viewInvest" class="hide"></div>
 
+  <!-- VIEW: CARTÕES -->
+  <div id="viewCartoes" class="hide"></div>
+
+  <!-- VIEW: METAS / ORÇAMENTO -->
+  <div id="viewOrcamento" class="hide"></div>
+
   <!-- VIEW: BASE -->
   <div id="viewBase" class="hide"></div>
 
   <!-- VIEW: CONTA (ajustes do usuário) — montada pelo auth.js -->
   <div id="viewConta" class="hide"></div>
 </div>
+
+<!-- A única ação primária do app. O WhatsApp tem um botão; nós tínhamos 21. -->
+<button class="fab hide" id="fab" aria-label="Novo lançamento">+</button>
 
 <div class="foot">
   <span>VIZIO Money · Jan–Dez · dados salvos neste dispositivo</span>
@@ -795,29 +897,37 @@ function cardsLimited(){ return !isPro(); }                       // Free: até 
    RENDER
    ============================================================ */
 let activeMonth = S.current;
-let view = 'month';    // month | year | invest | base
-/* Módulos do mês. A auditoria mediu 3.364px (4 telas de rolagem) e 9 blocos
-   numa página só — e eles já se agrupavam sozinhos: 4 eram de cartão. */
-let modulo = 'resumo'; // resumo | movimento | cartoes | orcamento
-const MODULOS = [
-  { id:'resumo',    nome:'Resumo',    ic:'📊' },
-  { id:'movimento', nome:'Movimento', ic:'💸' },
-  { id:'cartoes',   nome:'Cartões',   ic:'💳' },
-  { id:'orcamento', nome:'Orçamento', ic:'🎯' }
-];
+let view = 'month';    // month(=Início) | cartoes | orcamento | invest | year | base | conta
+
+/* As abas de módulo MORRERAM aqui.
+   Elas eram uma segunda camada de menu logo abaixo da barra inferior — e é
+   exatamente isso que dá "cara de sistema": o usuário navegando a navegação.
+   Cada módulo virou um item da barra de baixo. Uma camada só, como no
+   Instagram e no WhatsApp. `modulo` fica só para não quebrar o tour antigo. */
+let modulo = 'resumo';
 /* Navegação principal: no celular vira barra inferior, no desktop menu lateral.
    Mesma fonte de verdade para os dois — um lugar só define o menu. */
+/* Ícones de traço, não emoji. Emoji na navegação parece brinquedo e muda de
+   desenho em cada aparelho — o Instagram não tem um único emoji na barra. */
+const IC = {
+  home:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/></svg>',
+  card:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>',
+  target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>',
+  seed:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8"/><path d="M12 13C12 8 8 5 4 5c0 5 4 8 8 8Z"/><path d="M12 13c0-4 3-7 7-7 0 4-3 7-7 7Z"/></svg>',
+  chart:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>'
+};
+/* Uma camada de navegação, 5 itens — o mesmo número do Instagram.
+   Ajustes saiu da barra: é configuração, não destino do dia a dia. Vive no ⚙️. */
 const NAV = [
-  { id:'mes',    nome:'Mês',      ic:'📅', on:()=>view==='month' },
-  { id:'invest', nome:'Investir', ic:'🌱', on:()=>view==='invest' },
-  { id:'ano',    nome:'Ano',      ic:'📊', on:()=>view==='year' },
-  { id:'base',   nome:'Ajustes',  ic:'⚙️', on:()=>view==='base' }
+  { id:'mes',       nome:'Início',  ic:IC.home,   on:()=>view==='month'    },
+  { id:'cartoes',   nome:'Cartões', ic:IC.card,   on:()=>view==='cartoes'  },
+  { id:'orcamento', nome:'Metas',   ic:IC.target, on:()=>view==='orcamento'},
+  { id:'invest',    nome:'Guardar', ic:IC.seed,   on:()=>view==='invest'   },
+  { id:'ano',       nome:'Ano',     ic:IC.chart,  on:()=>view==='year'     }
 ];
+const NAV_VIEW = { mes:'month', cartoes:'cartoes', orcamento:'orcamento', invest:'invest', ano:'year', base:'base' };
 function irPara(id){
-  if(id==='mes')    view='month';
-  if(id==='invest') view='invest';
-  if(id==='ano')    view='year';
-  if(id==='base')   view='base';
+  view = NAV_VIEW[id] || 'month';
   window.scrollTo({top:0,behavior:'smooth'});
   render();
 }
@@ -834,10 +944,17 @@ function render(){
   document.getElementById('viewInvest').classList.toggle('hide', view!=='invest');
   document.getElementById('viewBase').classList.toggle('hide', view!=='base');
   document.getElementById('viewConta').classList.toggle('hide', view!=='conta');
-  if(view==='month')  renderMonth();
-  if(view==='year')   renderYear();
-  if(view==='invest') renderInvest();
-  if(view==='base')   renderBase();
+  document.getElementById('viewCartoes').classList.toggle('hide', view!=='cartoes');
+  document.getElementById('viewOrcamento').classList.toggle('hide', view!=='orcamento');
+  /* O FAB só aparece onde lançar faz sentido. Botão que não serve à tela em
+     que está é ruído — e o usuário aprende a ignorá-lo. */
+  document.getElementById('fab').classList.toggle('hide', !['month','invest'].includes(view));
+  if(view==='month')     renderMonth();
+  if(view==='year')      renderYear();
+  if(view==='invest')    renderInvest();
+  if(view==='base')      renderBase();
+  if(view==='cartoes')   renderCartoes();
+  if(view==='orcamento') renderOrcamento();
   /* A conta mora no auth.js, que carrega DEPOIS deste script — o guard evita
      que o primeiro render() morra caso a view já venha como 'conta'. */
   if(view==='conta' && window.renderConta) window.renderConta();
@@ -849,106 +966,324 @@ function render(){
    mesmo NAV. Se um dia um item mudar, muda nos dois — sem menu órfão. */
 function renderNav(){
   const html = NAV.map(n=>`<button class="nav-i${n.on()?' on':''}" data-nav="${n.id}">
-      <span class="nav-ic">${n.ic}</span><span class="nav-nm">${n.nome}</span></button>`).join('');
+      <span class="nav-ic">${n.ic}${vmBadge(n.id,activeMonth)}</span>
+      <span class="nav-nm">${n.nome}</span></button>`).join('');
   const bn=document.getElementById('bottomNav'), sd=document.getElementById('sideNav');
   bn.innerHTML=html; sd.innerHTML=html;
   [...bn.children, ...sd.children].forEach(b=>b.onclick=()=>irPara(b.dataset.nav));
 }
 
+/* ‹ Julho › — o seletor que substitui os 12 botões.
+   Assumindo o erro: a faixa era carrossel; quando o Isaac pediu para acabar a
+   rolagem lateral, virei grade 6x2 e enchi a tela de mês. Nenhuma das duas era
+   a resposta. As setas resolvem 90% dos casos (você quer o mês vizinho);
+   para os outros 10%, toca no nome e escolhe. */
 function renderStrip(){
   const el=document.getElementById('monthStrip'); el.innerHTML='';
-  /* Ano/Investir saíram daqui: agora moram no menu. A faixa volta a ser
-     só o que ela promete — a linha do tempo dos meses. */
-  MONTHS.forEach((nm,m)=>{
+  if(view!=='month'){ return; }
+
+  const box=document.createElement('div'); box.className='mes-sel';
+  const seta=(dir,alvo)=>{
     const b=document.createElement('button');
-    const locked=monthLocked(m);
-    b.className='mbtn'+(view==='month'&&m===activeMonth?' active':'')+(locked?' locked':'');
-    b.innerHTML = MABBR[m] + (locked?'<span class="lk">🔒</span>':'');
-    b.onclick=()=>{ if(locked){ paywall('Desbloqueie o ano inteiro'); return;} activeMonth=m; view='month'; render(); };
-    el.appendChild(b);
-  });
-  /* mobile: traz o mês ativo para a vista — ninguém deve caçar o próprio mês */
-  const at = el.querySelector('.mbtn.active');
-  if(at && el.scrollWidth > el.clientWidth){
-    el.scrollTo({ left: at.offsetLeft - el.clientWidth/2 + at.offsetWidth/2,
-                  behavior: 'smooth' });
-  }
+    b.className='mes-nav'; b.type='button';
+    b.innerHTML = dir<0 ? '‹' : '›';
+    b.setAttribute('aria-label', dir<0?'Mês anterior':'Próximo mês');
+    b.disabled = alvo<0 || alvo>11;
+    b.onclick=()=>{ if(monthLocked(alvo)) return paywall('Desbloqueie o ano inteiro');
+      activeMonth=alvo; render(); };
+    return b;
+  };
+  box.appendChild(seta(-1, activeMonth-1));
+
+  const nome=document.createElement('button');
+  nome.className='mes-nome'; nome.type='button';
+  nome.innerHTML = `${MONTHS[activeMonth]} <span class="lk">▾</span>`;
+  nome.onclick = abrirMeses;
+  box.appendChild(nome);
+
+  box.appendChild(seta(1, activeMonth+1));
+  el.appendChild(box);
 }
 
-/* ---------- VIEW MÊS ---------- */
+/* Os 12 meses continuam a um toque — só não moram mais na tela. */
+function abrirMeses(){
+  const r=document.getElementById('overlayRoot');
+  r.innerHTML=`<div class="overlay"><div class="sheet">
+    <h2 style="margin-bottom:14px">Ir para o mês</h2>
+    <div class="mes-lista" id="mesLista"></div>
+    <button class="linklike" id="mes-fecha">Fechar</button>
+  </div></div>`;
+  const lista=document.getElementById('mesLista');
+  MONTHS.forEach((nm,m)=>{
+    const b=document.createElement('button');
+    const bloq=monthLocked(m);
+    b.className='mes-op'+(m===activeMonth?' on':'');
+    b.textContent = MABBR[m] + (bloq?' 🔒':'');
+    b.disabled = false;
+    b.onclick=()=>{ if(bloq){ r.innerHTML=''; return paywall('Desbloqueie o ano inteiro'); }
+      activeMonth=m; view='month'; r.innerHTML=''; render(); };
+    lista.appendChild(b);
+  });
+  document.getElementById('mes-fecha').onclick=()=> r.innerHTML='';
+}
+
+/* ---------- FAB — a folha de novo lançamento ----------
+   Antes, para lançar você caçava o formulário certo dentro do card certo
+   dentro do módulo certo. Agora: toca no +, escolhe o quê, digita, pronto.
+   Os formulários antigos continuam existindo nas abas — quem já conhece o
+   caminho não perde nada; quem é novo ganha um só. */
+function abrirNovo(tipo){
+  const m=activeMonth, r=document.getElementById('overlayRoot');
+
+  if(!tipo){
+    r.innerHTML=`<div class="overlay"><div class="sheet">
+      <h2 style="margin-bottom:4px">O que aconteceu?</h2>
+      <p class="budmeta" style="margin-bottom:16px">${MONTHS[m]} de ${S.year}</p>
+      <div class="novo-ops">
+        <button class="novo-op" data-t="out"><span class="novo-ic menos">↑</span>
+          <span><b>Um gasto</b><i>paguei alguma coisa</i></span></button>
+        <button class="novo-op" data-t="in"><span class="novo-ic mais">↓</span>
+          <span><b>Uma entrada</b><i>recebi dinheiro</i></span></button>
+        <button class="novo-op" data-t="ap"><span class="novo-ic guarda">◆</span>
+          <span><b>Guardei</b><i>investi ou poupei</i></span></button>
+        <button class="novo-op" data-t="parc"><span class="novo-ic menos">▣</span>
+          <span><b>Compra parcelada</b><i>espalha sozinha pelos meses</i></span></button>
+      </div>
+      <button class="linklike" id="novo-fecha">Cancelar</button>
+    </div></div>`;
+    r.querySelectorAll('.novo-op').forEach(b=> b.onclick=()=> abrirNovo(b.dataset.t));
+    document.getElementById('novo-fecha').onclick=()=> r.innerHTML='';
+    return;
+  }
+
+  const hoje = vmDateBR(new Date().toISOString().slice(0,10));
+  const T = {
+    out:  { tit:'Novo gasto',      lb:'Descrição', ph:'Ex.: Mercado' },
+    in:   { tit:'Nova entrada',    lb:'Descrição', ph:'Ex.: Salário' },
+    ap:   { tit:'Guardar dinheiro',lb:'Onde',      ph:'Ex.: Caixinha Nu' },
+    parc: { tit:'Compra parcelada',lb:'Descrição', ph:'Ex.: Celular' }
+  }[tipo];
+
+  r.innerHTML=`<div class="overlay"><div class="sheet">
+    <h2 style="margin-bottom:14px">${T.tit}</h2>
+    <div class="vm-err" id="nv-err"></div>
+    <div class="vm-field"><label for="nv-desc">${T.lb}</label>
+      <input id="nv-desc" placeholder="${T.ph}"></div>
+    <div class="vm-field"><label for="nv-val">${tipo==='parc'?'Valor da parcela':'Valor'}</label>
+      <input id="nv-val" class="money num" inputmode="decimal" placeholder="0,00"></div>
+    ${tipo==='out'||tipo==='parc' ? `
+      <div class="vm-field"><label for="nv-cat">Categoria</label>
+        <select id="nv-cat">${S.categories.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div>` : ``}
+    ${tipo==='out' ? `
+      <div class="vm-field"><label for="nv-pay">Como pagou</label>
+        <select id="nv-pay">${allPayments().map(x=>`<option>${esc(x)}</option>`).join('')}</select></div>` : ``}
+    ${tipo==='parc' ? `
+      <div class="vm-field"><label for="nv-card">Cartão</label>
+        <select id="nv-card">${S.cards.map(x=>`<option>${esc(x.nome)}</option>`).join('')}</select></div>
+      <div class="vm-field"><label for="nv-n">Quantas parcelas</label>
+        <input id="nv-n" type="number" inputmode="numeric" min="1" max="48" placeholder="10"></div>` : ``}
+    ${tipo==='ap' ? `
+      <div class="vm-field"><label for="nv-tipo">Tipo</label>
+        <select id="nv-tipo"><option value="aporte">Guardar (aporte)</option><option value="resgate">Resgatar (tirar)</option></select></div>` : ``}
+    <div class="vm-field"><label for="nv-data">Data</label>
+      ${vmCampoData('nv-data','')}</div>
+    <div class="budmeta" id="nv-hint" style="margin:-4px 0 12px"></div>
+    <button class="btn" id="nv-ok" style="width:100%">Lançar</button>
+    <button class="linklike" id="nv-nao">Cancelar</button>
+  </div></div>`;
+
+  document.getElementById('nv-data').value = hoje;
+  vmLigarMascaras(r);
+  const err = t => { const e=document.getElementById('nv-err'); e.textContent=t; e.style.display=t?'block':'none'; };
+  document.getElementById('nv-nao').onclick=()=> r.innerHTML='';
+
+  /* Parcelada: mostra ao vivo em que mês a 1ª parcela cai — a regra da melhor
+     data só ensina se aparecer na hora da decisão. */
+  if(tipo==='parc'){
+    const prever=()=>{
+      const d=vmDateISO(document.getElementById('nv-data')), card=document.getElementById('nv-card').value;
+      const h=document.getElementById('nv-hint');
+      if(!d){ h.textContent=''; return; }
+      const cd=getCard(card), mf=Math.min(11, mesDaFatura(d,card));
+      const dia=new Date(d+'T12:00:00').getDate(), depois=(cd?.melhor||1)>1 && dia>=(cd?.melhor||1);
+      h.innerHTML = `1ª parcela em <b>${MONTHS[mf]}</b>. ` +
+        (depois ? `Você comprou a partir do dia ${cd.melhor} (melhor data) — ganhou um ciclo. ✔`
+                : `Comprou antes do dia ${cd?.melhor||1} — entra na fatura que fecha agora.`);
+    };
+    document.getElementById('nv-data').addEventListener('input',prever);
+    document.getElementById('nv-card').addEventListener('change',prever);
+    prever();
+  }
+
+  document.getElementById('nv-ok').onclick=()=>{
+    const desc=document.getElementById('nv-desc').value.trim();
+    const val =vmMoneyVal(document.getElementById('nv-val'));
+    const data=vmDateISO(document.getElementById('nv-data')) || today(m);
+    if(!desc) return err('Diga o que foi.');
+    if(!(val>0)) return err('Informe um valor maior que zero.');
+
+    if(tipo==='in')  month(m).incomes.push({date:data,desc,value:val});
+    if(tipo==='out') month(m).expenses.push({date:data,desc,
+      cat:document.getElementById('nv-cat').value, pay:document.getElementById('nv-pay').value, value:val});
+    if(tipo==='ap')  month(m).investments.push({date:data,place:desc,value:val,
+      tipo:document.getElementById('nv-tipo').value});
+    if(tipo==='parc'){
+      const n=parseInt(document.getElementById('nv-n').value);
+      if(!(n>0)) return err('Quantas parcelas?');
+      const card=document.getElementById('nv-card').value;
+      const start=Math.min(11, mesDaFatura(data,card));
+      S.purchases.push({id:uid(),desc,cat:document.getElementById('nv-cat').value,
+        card,value:val,parcelas:n,start,data});
+    }
+    r.innerHTML=''; view='month'; render();
+    toast(tipo==='parc'?'Parcelas espalhadas ✨':'Lançado');
+  };
+}
+
+/* ---------- INÍCIO — um número e um feed ----------
+   Isto era um painel: 4 KPIs + 12 meses + abas + panorama, tudo antes da
+   pessoa lançar o primeiro real. Painel serve a quem já entende; afasta quem
+   a gente quer pegar a R$ 9,90.
+   Agora a home responde UMA pergunta ("posso gastar?") e mostra o que
+   aconteceu — igual à lista de conversas do WhatsApp. O resto não sumiu:
+   saiu da frente e mora nas abas de baixo. */
 function renderMonth(){
-  const m=activeMonth, mm=month(m);
-  const sf=saldoFinal(m), inc=incomesTotal(m), out=cashOut(m), inv=investTotal(m);
+  const m=activeMonth;
+  const sf=saldoFinal(m);
   const host=document.getElementById('viewMonth');
   host.innerHTML='';
 
-  /* Saldo inicial: discreto, ACIMA dos KPIs — é ajuste, não protagonista. */
-  const head=document.createElement('div'); head.className='vm-head';
-  head.innerHTML=`
-    <div class="vm-head-l">
-      <b>${MONTHS[m]} de ${S.year}</b>
-      <span class="vm-hoje">Hoje é ${vmHoje()}</span>
-    </div>
-    <div class="vm-head-r">
-      <label for="opening">Saldo inicial</label>
-      <input id="opening" class="num money" type="text" inputmode="decimal"
-        placeholder="${m===0?'0,00':(mesEncerrado(m-1)?BRL(saldoFinal(m-1)).replace('R$ ',''):'0,00')}"
-        value="${mm.opening!==null&&mm.opening!==''?vmMoneyFmt(mm.opening):''}">
-      <span class="budmeta">${vmOpeningTag(m,mm)}</span>
-    </div>`;
-  host.appendChild(head);
-  head.querySelector('#opening').onchange=e=>{ mm.opening = vmMoneyVal(e.target); render(); };
+  /* HERÓI: a sobra do mês. É o único número que só o VIZIO Money sabe —
+     o extrato do banco não desconta a fatura nem o que você guardou. */
+  const her=document.createElement('div'); her.className='heroi';
+  her.innerHTML=`
+    <div class="heroi-lb">${sf>=0?'Sobra este mês':'Falta este mês'}</div>
+    <div class="heroi-n${sf<0?' neg':''}">${BRL(Math.abs(sf))}</div>
+    <div class="heroi-ctx">${heroiContexto(m)}</div>`;
+  host.appendChild(her);
 
-  // KPIs
-  const kpi=document.createElement('div'); kpi.className='kpi'; kpi.style.marginTop='12px';
-  kpi.innerHTML=`
-    ${kpiBox('Entradas','var(--pos)',BRL(inc),'▲')}
-    ${kpiBox('Saídas (fatura + à vista)','var(--neg)',BRL(out),'▼')}
-    ${kpiBox(inv>=0?'Investido':'Resgatado','var(--brand-2)',BRL(Math.abs(inv)),'◆')}
-    ${kpiBox('Saldo do mês',sf>=0?'var(--pos)':'var(--neg)',BRL(sf), sf>=0?'😌':'⚠️')}`;
-  host.appendChild(kpi);
+  /* Uma reflexão só, e apenas quando tem o que dizer. Antes eram quatro
+     cards empilhados: conselho demais vira barulho e ninguém lê nenhum. */
+  const rf = reflexoes(m)[0];
+  if(rf) host.appendChild(reflexaoUnica(rf));
 
-  /* Abas de módulo: cada uma entrega 2–3 blocos em vez de 9 empilhados. */
-  const tabs=document.createElement('div'); tabs.className='mod-tabs'; tabs.id='modTabs';
-  MODULOS.forEach(mo=>{
-    const b=document.createElement('button');
-    b.className='mod-tab'+(modulo===mo.id?' on':'');
-    b.dataset.mod=mo.id;   /* âncora estável para o tour guiado */
-    b.innerHTML=`<span class="mod-ic">${mo.ic}</span><span>${mo.nome}</span>${vmBadge(mo.id,m)}`;
-    b.onclick=()=>{ modulo=mo.id; render(); };
-    tabs.appendChild(b);
-  });
-  host.appendChild(tabs);
-
-  const g=(cls)=>{ const d=document.createElement('div'); d.className='grid '+(cls||''); d.style.marginTop='16px'; return d; };
-
-  if(modulo==='resumo'){
-    host.appendChild(reflexaoCard(m));
-    const r=g(''); r.appendChild(panoramaCard()); host.appendChild(r);
-  }
-  if(modulo==='movimento'){
-    /* Entradas + Investimentos lado a lado: primeiro você se paga, depois gasta. */
-    const a=g('g2'); a.appendChild(entradasCard(m)); a.appendChild(investCard(m)); host.appendChild(a);
-    const b=g(''); b.appendChild(gastosCard(m)); host.appendChild(b);
-  }
-  if(modulo==='cartoes'){
-    /* Os dois lados do cartão: o que vence agora x o que estou criando agora */
-    const a=g('g2'); a.appendChild(cardsCard(m)); a.appendChild(usoCartaoCard(m)); host.appendChild(a);
-    const b=g(''); b.appendChild(parceladasCard(m)); host.appendChild(b);
-    const c=g(''); c.appendChild(panoramaCard()); host.appendChild(c);
-  }
-  if(modulo==='orcamento'){
-    const a=g(''); a.appendChild(budgetCard(m)); host.appendChild(a);
-  }
+  /* O FEED */
+  host.appendChild(feedCard(m));
 }
-/* Sinal no menu: leva o olho para o que precisa de atenção. */
+
+/* A linha que explica o número — sem ela o herói é só um número bonito. */
+function heroiContexto(m){
+  const mm=month(m), inc=incomesTotal(m), fat=faturasTotal(m), inv=investTotal(m);
+  const partes=[];
+  if(inc>0) partes.push(`entrou <b>${BRL(inc)}</b>`);
+  if(fat>0) partes.push(`a fatura de <b>${BRL(fat)}</b> já saiu`);
+  if(inv>0) partes.push(`você guardou <b>${BRL(inv)}</b>`);
+  if(!partes.length) return 'Toque no <b>+</b> e lance sua primeira entrada. O resto o app calcula.';
+  const uso = usoCartaoTotal(m);
+  const extra = uso>0 ? ` Ainda tem <b>${BRL(uso)}</b> no crédito virando a fatura do mês que vem.` : '';
+  return partes.join(' · ') + '.' + extra;
+}
+
+/* FEED — tudo do mês em uma linha do tempo só, mais recente primeiro.
+   Antes: três tabelas separadas (entradas, gastos, investimentos), cada uma
+   com cabeçalho e borda. A pessoa não pensa em três tabelas; ela pensa
+   "o que aconteceu com meu dinheiro". */
+function feedItens(m){
+  const mm=month(m), it=[];
+  mm.incomes.forEach((x,i)=> it.push({t:'in', d:x.date, nome:x.desc, sub:'entrada', v:+x.value, i}));
+  mm.expenses.forEach((x,i)=> it.push({t:'out', d:x.date, nome:x.desc,
+    sub:`${x.cat} · ${x.pay}${isCredit(x.pay)?' (crédito)':''}`, v:+x.value, i}));
+  mm.investments.forEach((x,i)=> it.push({t:x.tipo==='resgate'?'resg':'ap', d:x.date, nome:x.place,
+    sub:x.tipo==='resgate'?'resgatado':'guardado', v:+x.value, i}));
+  installmentItems(m).forEach(p=> it.push({t:'parc', d:p.data||today(m), nome:p.desc,
+    sub:`${p.n}/${p.parcelas} · ${p.card}`, v:+p.value, fixo:true}));
+  return it.sort((a,b)=> String(b.d||'').localeCompare(String(a.d||'')));
+}
+const FEED_IC = { in:'↓', out:'↑', ap:'◆', resg:'◇', parc:'▣' };
+function feedCard(m){
+  const c=document.createElement('div'); c.className='card';
+  const itens=feedItens(m);
+
+  if(!itens.length){
+    c.innerHTML=`<div class="feed-vazio">Nada lançado em ${MONTHS[m]} ainda.<br>
+      Toque no <b>+</b> para começar.</div>`;
+    return c;
+  }
+
+  let html='', diaAtual='';
+  itens.forEach((x,k)=>{
+    const dia = fmtDate(x.d);
+    if(dia!==diaAtual){ diaAtual=dia; html+=`<div class="feed-dia">${dia}</div>`; }
+    const cls = x.t==='in'?'mais' : (x.t==='ap'||x.t==='resg')?'guarda' : 'menos';
+    const sinal = x.t==='in'?'+' : (x.t==='ap'?'' : x.t==='resg'?'+' : '−');
+    html+=`<div class="feed-i" data-t="${x.t}" data-i="${x.i??''}">
+      <span class="feed-ic">${FEED_IC[x.t]}</span>
+      <span class="feed-tx"><b>${esc(x.nome||'—')}</b><span>${esc(x.sub)}</span></span>
+      <span class="feed-vl ${cls}">${sinal}${BRL(x.v).replace('R$ ','')}</span>
+    </div>`;
+  });
+  c.innerHTML = `<h3>${MONTHS[m]} <span class="sub">${itens.length} lançamento${itens.length>1?'s':''}</span></h3>${html}`;
+
+  /* Toque na linha = apagar, com confirmação. Parcela não se apaga por aqui:
+     ela é gerada pela compra, e apagar a sombra sem o objeto confunde. */
+  c.querySelectorAll('.feed-i').forEach(el=>{
+    const t=el.dataset.t, i=+el.dataset.i;
+    if(t==='parc'){ el.style.cursor='default'; return; }
+    el.onclick=()=>{
+      const arr = t==='in' ? month(m).incomes : t==='out' ? month(m).expenses : month(m).investments;
+      const nome = el.querySelector('b').textContent;
+      if(confirm(`Apagar "${nome}"?`)){ arr.splice(i,1); render(); toast('Apagado'); }
+    };
+  });
+  return c;
+}
+
+/* Uma reflexão, discreta. Sem caixa: só um fio dourado à esquerda. */
+function reflexaoUnica(rf){
+  const c=document.createElement('div'); c.className='rfx-solo';
+  c.innerHTML=`<div class="rfx-tag">${esc(rf.tag)}</div>
+    <div class="rfx-t">${esc(rf.t)}</div>
+    <div class="rfx-d">${rf.d}</div>
+    <button class="rfx-cta" type="button">${esc(rf.cta)} →</button>`;
+  c.querySelector('.rfx-cta').onclick=()=>{
+    const alvo=rf.target;
+    if(alvo==='base'){ view='base'; }
+    else if(alvo==='invest'){ view='invest'; }
+    else if(alvo==='orcamento'){ view='orcamento'; }
+    else if(alvo==='cartoes'){ view='cartoes'; }
+    window.scrollTo({top:0,behavior:'smooth'}); render();
+  };
+  return c;
+}
+
+/* ---------- CARTÕES (aba própria) ---------- */
+function renderCartoes(){
+  const m=activeMonth, host=document.getElementById('viewCartoes');
+  host.innerHTML='';
+  host.appendChild(cardsCard(m));
+  host.appendChild(usoCartaoCard(m));
+  host.appendChild(parceladasCard(m));
+  host.appendChild(panoramaCard());
+}
+
+/* ---------- METAS / ORÇAMENTO (aba própria) ---------- */
+function renderOrcamento(){
+  const m=activeMonth, host=document.getElementById('viewOrcamento');
+  host.innerHTML='';
+  host.appendChild(budgetCard(m));
+}
+/* Sinal no menu: leva o olho para o que precisa de atenção.
+   Ao dividir o app em abas, a pessoa ganha organização mas PERDE a visão
+   periférica — o que está fora da tela deixa de existir. O badge devolve isso
+   sem trazer o empilhamento de volta. Migrou das abas de módulo (mortas) para
+   a barra de navegação. */
 function vmBadge(id,m){
   if(id==='orcamento'){
     const n=S.categories.filter(c=>{const t=+(S.budgets[c]||0);return t>0 && categoryReal(c,m)/t>=1;}).length;
-    return n? `<span class="mod-badge">${n}</span>` : '';
+    return n? `<span class="nav-badge">${n}</span>` : '';
   }
   if(id==='cartoes'){
-    return faturasTotal(m)>0 ? `<span class="mod-dot" title="fatura a pagar"></span>` : '';
+    return faturasTotal(m)>0 ? `<span class="nav-dot" title="fatura a pagar"></span>` : '';
   }
   return '';
 }
@@ -1448,7 +1783,11 @@ function loadDemo(){
 
 /* topbar buttons */
 document.getElementById('btnBase').onclick=()=>{view=view==='base'?'month':'base';render();};
-document.getElementById('btnMenu').onclick=()=>{ if(isPro()){if(confirm('Voltar para o plano Free? (teste)')){S.plan='free';render();}} else paywall('Assine o VIZIO Money Pro'); };
+document.getElementById('fab').onclick=()=> abrirNovo();
+/* O btnMenu é ligado pelo auth.js (abre a tela de conta). Aqui havia um
+   handler de TESTE — "Voltar para o plano Free? (teste)" — que sobrou de uma
+   depuração. Ficava vivo na janela entre este script e o auth.js carregar.
+   Removido: código de teste em produção é bug esperando o horário. */
 
 /* ============================================================
    PWA — instalação e ATUALIZAÇÃO
@@ -1523,6 +1862,6 @@ render();
 <script src="auth.js?v=1.3"></script>
 
 <!-- Tour guiado. Depois do auth.js: um tour precisa saber se a pessoa é nova. -->
-<script src="tour.js?v=1.0"></script>
+<script src="tour.js?v=2.0"></script>
 </body>
 </html>
