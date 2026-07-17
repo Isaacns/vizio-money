@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=2.2">
+<link rel="stylesheet" href="brand.css?v=2.3">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -426,6 +426,36 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 .novo-op b{display:block;font-size:14.5px;color:var(--ink);font-weight:600}
 .novo-op i{display:block;font-size:12px;color:var(--s400);font-style:normal;margin-top:2px}
 
+/* ==========================================================================
+   BARRA DE ESCRITA — a interface do WhatsApp aplicada a dinheiro
+   Fica onde o polegar já está e onde a pessoa já sabe que se escreve.
+   ========================================================================== */
+.chatbar{position:fixed;left:0;right:0;z-index:44;display:flex;align-items:flex-end;gap:8px;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(6,8,15,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+@media(max-width:820px){ .chatbar{bottom:calc(64px + env(safe-area-inset-bottom))} }
+@media(min-width:821px){
+  .chatbar{bottom:0;left:var(--sidenav-w);border-left:1px solid var(--line)}
+  .chatbar > *{max-width:760px}
+  .chatbar{justify-content:center}
+}
+.chatbar textarea{
+  flex:1;resize:none;border:1px solid var(--line-input);background:var(--night);color:var(--ink);
+  border-radius:22px;padding:12px 16px;font-family:inherit;font-size:16px;line-height:1.35;
+  max-height:96px;min-height:46px;overflow-y:auto;
+}
+.chatbar textarea::placeholder{color:var(--s400)}
+.chat-go{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;
+  background:var(--grad-brand);color:#fff;font-size:20px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.chat-go:disabled{opacity:.35;cursor:default}
+/* Com a barra no ar, o conteúdo precisa de chão extra para não ficar embaixo. */
+@media(max-width:820px){ .chatbar:not(.hide) ~ .wrap, body:has(.chatbar:not(.hide)) .wrap{
+  padding-bottom:calc(172px + env(safe-area-inset-bottom)) } }
+/* O FAB sobe para não brigar com a barra. */
+@media(max-width:820px){ body:has(.chatbar:not(.hide)) .fab{ bottom:calc(142px + env(safe-area-inset-bottom)) } }
+@media(min-width:821px){ body:has(.chatbar:not(.hide)) .fab{ bottom:88px } }
+
 /* FAB — a única ação primária. WhatsApp tem um botão. Nós tínhamos 21. */
 .fab{position:fixed;right:18px;z-index:45;width:58px;height:58px;border-radius:50%;border:none;
   background:var(--grad-brand);color:#fff;font-size:27px;font-weight:300;line-height:1;
@@ -626,7 +656,17 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   <div id="viewConta" class="hide"></div>
 </div>
 
-<!-- A única ação primária do app. O WhatsApp tem um botão; nós tínhamos 21. -->
+<!-- A barra de escrita: "gastei 50 no mercado" vira lançamento.
+     Interpretada por regras NO APARELHO — o que a pessoa gasta não sai daqui. -->
+<div class="chatbar hide" id="chatBar">
+  <label class="sr-so" for="chatIn">Escreva um lançamento</label>
+  <textarea id="chatIn" rows="1" enterkeyhint="send" autocomplete="off"
+    placeholder="gastei 50 no mercado…"></textarea>
+  <button class="chat-go" id="chatGo" aria-label="Lançar">↑</button>
+</div>
+
+<!-- O + continua para quem prefere formulário. Os dois caminhos convivem:
+     escrever é rápido para o caso simples; o formulário é seguro para o caro. -->
 <button class="fab hide" id="fab" aria-label="Novo lançamento">+</button>
 
 <div class="foot">
@@ -1158,6 +1198,9 @@ function render(){
   /* O FAB só aparece onde lançar faz sentido. Botão que não serve à tela em
      que está é ruído — e o usuário aprende a ignorá-lo. */
   document.getElementById('fab').classList.toggle('hide', !['month','invest'].includes(view));
+  /* A barra só existe no Início: é lá que se lança o dia a dia. Em Cartões ou
+     Dívidas ela seria um campo de texto sem contexto. */
+  document.getElementById('chatBar').classList.toggle('hide', view!=='month');
   if(view==='month')     renderMonth();
   if(view==='year')      renderYear();
   if(view==='invest')    renderInvest();
@@ -1235,6 +1278,196 @@ function abrirMeses(){
     lista.appendChild(b);
   });
   document.getElementById('mes-fecha').onclick=()=> r.innerHTML='';
+}
+
+/* ============================================================
+   BARRA DE CHAT — interpretação por REGRAS, no próprio aparelho
+
+   Por que regras e não IA: custo zero por mensagem (num produto de R$ 9,90
+   isso decide), resposta instantânea, funciona sem internet e — o que mais
+   importa — o que a pessoa gasta NÃO sai do aparelho dela. Mandar "gastei 200
+   na farmácia" para um servidor de terceiro mudaria a Política de Privacidade
+   e o contrato do produto.
+
+   Regra de ouro do desenho: quando a confiança é BAIXA, não grava — abre o
+   formulário já preenchido. Errar o dinheiro de alguém em silêncio é pior do
+   que pedir um toque a mais.
+   ============================================================ */
+const CHAT_VERBOS = {
+  in:   ['recebi','ganhei','entrou','caiu','salario','salário','pagaram','recebimento','freela','vendi'],
+  ap:   ['guardei','poupei','investi','apliquei','reservei','separei'],
+  resg: ['resgatei','tirei','saquei','retirei'],
+  out:  ['gastei','paguei','comprei','torrei','custou','saiu','gasto']
+};
+const CHAT_QUANDO = {
+  hoje:0, 'ontem':1, 'anteontem':2
+};
+/* "no pix", "no crédito", "no C6" — o cartão vem do cadastro do usuário. */
+function chatPagamento(t){
+  for(const c of cardNames()) if(new RegExp(`\\b${c.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`).test(t)) return c;
+  if(/\bcr[eé]dito\b|\bcart[aã]o\b/.test(t)) return cardNames()[0] || 'Pix';
+  if(/\bd[eé]bito\b/.test(t)) return 'Débito';
+  if(/\bpix\b|\bdinheiro\b|\bespecie\b|\bespécie\b/.test(t)) return 'Pix';
+  return null;
+}
+function chatCategoria(t){
+  /* casa com as categorias que o PRÓPRIO usuário cadastrou — nada de lista
+     fixa que ignora quem criou "Pets" ou "Igreja". */
+  const achou = S.categories.find(c=> new RegExp(`\\b${c.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`).test(t));
+  if(achou) return { cat:achou, forte:true };
+  const dicas = {
+    'Alimentação':['mercado','supermercado','feira','padaria','açougue','acougue','hortifruti','comida','almoço','almoco','janta','restaurante'],
+    'Lanches':['ifood','lanche','pizza','hamburguer','hambúrguer','sorvete','café','cafe'],
+    'Contas de Casa':['luz','energia','água','agua','internet','gás','gas','condomínio','condominio','telefone','celular'],
+    'Saúde':['farmácia','farmacia','remédio','remedio','médico','medico','dentista','exame','plano de saúde'],
+    'Uber':['uber','99','taxi','táxi','corrida'],
+    'Lazer':['cinema','bar','netflix','show','viagem','passeio','jogo'],
+    'Assinaturas':['assinatura','spotify','netflix','disney','prime','hbo','max'],
+    'Beleza':['cabelo','salão','salao','barbeiro','manicure','unha'],
+    'Roupas':['roupa','tênis','tenis','sapato','camisa','calça','calca'],
+    'Educação':['curso','faculdade','livro','escola','mensalidade'],
+    'Moradia':['aluguel','reforma','material','construção','construcao']
+  };
+  /* \b e NÃO includes(): "gas" (de gás) casa dentro de "GAStei" e mandava
+     "gastei 40 na farmacia" para Contas de Casa em vez de Saúde.
+     É o MESMO bug que "undo" dentro de "fundo" e "color:" dentro de
+     "border-color:" — terceira aparição. Substring sem fronteira de palavra é
+     a armadilha recorrente deste projeto: sempre \b. */
+  for(const [cat,palavras] of Object.entries(dicas)){
+    if(!S.categories.includes(cat)) continue;
+    if(palavras.some(p=> new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`).test(t)))
+      return { cat, forte:false };
+  }
+  return { cat:S.categories[0]||'Outros', forte:false };
+}
+
+function chatInterpretar(txt, mesRef){
+  const t = ' ' + String(txt||'').toLowerCase().trim() + ' ';
+  if(t.trim().length < 2) return null;
+
+  /* 1. VALOR — o único campo sem o qual nada existe.
+     Aceita "50", "R$ 50", "50,00", "1.200,50", "50 reais", "50 pila". */
+  const mv = t.match(/(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*(?:reais|real|pila|conto|contos)?/);
+  if(!mv) return null;
+  let bruto = mv[1];
+  /* 1.200,50 -> 1200.50 · 50,00 -> 50.00 · 50.00 -> 50.00 */
+  bruto = bruto.includes(',') ? bruto.replace(/\./g,'').replace(',','.')
+        : (bruto.match(/\.\d{3}\b/) ? bruto.replace(/\./g,'') : bruto);
+  const valor = parseFloat(bruto);
+  if(!(valor>0)) return null;
+
+  /* 2. TIPO — pelo verbo. Sem verbo, o padrão é gasto (é o que mais acontece). */
+  let tipo='out', temVerbo=false;
+  for(const [k,vs] of Object.entries(CHAT_VERBOS))
+    if(vs.some(v=> t.includes(' '+v))){ tipo=k; temVerbo=true; break; }
+
+  /* 3. QUANDO */
+  let dias=0, temData=false;
+  for(const [p,d] of Object.entries(CHAT_QUANDO))
+    if(t.includes(' '+p)){ dias=d; temData=true; break; }
+  const hoje=new Date(); hoje.setDate(hoje.getDate()-dias);
+  let iso = hoje.toISOString().slice(0,10);
+  const md = t.match(/\bdia\s+(\d{1,2})\b/) || t.match(/\b(\d{1,2})\/(\d{1,2})\b/);
+  if(md){
+    const dia = +md[1], mes = md[2] ? +md[2]-1 : mesRef;
+    if(dia>=1 && dia<=31 && mes>=0 && mes<=11){
+      iso = `${S.year}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+      temData=true;
+    }
+  }
+
+  /* 4. PAGAMENTO e CATEGORIA
+     O valor sai do texto ANTES de procurar categoria: "99" é o app de corrida
+     E é um valor. Sem tirar, "comprei 99 de roupa" virava Uber — toda compra
+     de exatamente R$ 99 seria categorizada errado, em silêncio. */
+  const semValor = t.replace(mv[0], ' ');
+  const pay = tipo==='out' ? (chatPagamento(semValor) || 'Pix') : null;
+  const ct  = tipo==='out' ? chatCategoria(semValor) : null;
+
+  /* 5. DESCRIÇÃO — tira valor, verbo, data e forma de pagamento; o que sobra
+     é o que a pessoa quis dizer. */
+  let desc = ' '+String(txt).trim()+' ';
+  desc = desc.replace(new RegExp(mv[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'),' ');
+  Object.values(CHAT_VERBOS).flat().forEach(v=> desc=desc.replace(new RegExp(`\\b${v}\\b`,'ig'),' '));
+  Object.keys(CHAT_QUANDO).forEach(p=> desc=desc.replace(new RegExp(`\\b${p}\\b`,'ig'),' '));
+  desc = desc.replace(/\bdia\s+\d{1,2}\b|\b\d{1,2}\/\d{1,2}\b/ig,' ')
+             .replace(/\b(no|na|de|do|da|em|com|pelo|pela|reais?|real|pila|contos?|r\$)\b/ig,' ')
+             .replace(/\s+/g,' ').trim();
+  if(pay) desc = desc.replace(new RegExp(`\\b${pay}\\b`,'i'),'').replace(/\s+/g,' ').trim();
+  if(!desc) desc = ct?.cat || (tipo==='in'?'Entrada':tipo==='ap'?'Guardado':'Gasto');
+  desc = desc.charAt(0).toUpperCase()+desc.slice(1);
+
+  /* 6. CONFIANÇA — decide se grava direto ou pede confirmação.
+     Sem verbo + sem descrição própria = adivinhação demais para gravar calado. */
+  let conf = 0.5;
+  if(temVerbo) conf += 0.25;
+  if(ct?.forte || tipo!=='out') conf += 0.15;
+  if(temData) conf += 0.1;
+  if(desc.length>2 && desc!==ct?.cat) conf += 0.1;
+
+  return { tipo, valor, desc, cat:ct?.cat, pay, data:iso, conf:Math.min(1,conf), temVerbo };
+}
+
+/* A barra: escreve e some. O FAB continua para quem prefere formulário —
+   os dois caminhos convivem porque servem gente diferente. */
+function chatEnviar(){
+  const el=document.getElementById('chatIn');
+  const txt=(el.value||'').trim();
+  if(!txt) return;
+  const m=activeMonth;
+  const r=chatInterpretar(txt, m);
+
+  if(!r){
+    /* Não entendeu: NÃO inventa. Abre o formulário com o que a pessoa
+       escreveu na descrição — o trabalho dela não se perde. */
+    abrirNovo('out');
+    setTimeout(()=>{ const d=document.getElementById('nv-desc'); if(d) d.value=txt; },80);
+    el.value=''; chatAltura(el);
+    toast('Não achei o valor — confira aí');
+    return;
+  }
+
+  /* A REGRA DE OURO: confiança baixa não grava calado. */
+  if(r.conf < 0.8){ chatPreencher(r, txt); el.value=''; chatAltura(el); return; }
+
+  const item = { date:r.data, desc:r.desc, value:r.valor };
+  if(r.tipo==='in')   month(m).incomes.push(item);
+  if(r.tipo==='out')  month(m).expenses.push({...item, cat:r.cat, pay:r.pay});
+  if(r.tipo==='ap')   month(m).investments.push({date:r.data, place:r.desc, value:r.valor, tipo:'aporte'});
+  if(r.tipo==='resg') month(m).investments.push({date:r.data, place:r.desc, value:r.valor, tipo:'resgate'});
+
+  el.value=''; chatAltura(el); view='month'; render();
+
+  /* Toast conta o que ENTENDEU e deixa desfazer. Se interpretou torto, a
+     pessoa vê na hora e volta atrás — sem precisar caçar o lançamento. */
+  const arr = r.tipo==='in' ? month(m).incomes : r.tipo==='out' ? month(m).expenses : month(m).investments;
+  const ondeEsta = arr.length-1;
+  const rotulo = r.tipo==='in' ? 'Entrada' : r.tipo==='out' ? `${r.cat} · ${r.pay}`
+               : r.tipo==='ap' ? 'Guardado' : 'Resgate';
+  toastDesfazer(`${r.desc} · ${BRL(r.valor)} · ${rotulo}`, ()=> arr.splice(ondeEsta,1));
+}
+
+/* Confiança baixa: abre o formulário JÁ PREENCHIDO com o palpite. A pessoa
+   confere e confirma — mais rápido que digitar do zero, e sem risco. */
+function chatPreencher(r, original){
+  abrirNovo(r.tipo==='resg' ? 'ap' : r.tipo);
+  setTimeout(()=>{
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e&&v!=null) e.value=v; };
+    set('nv-desc', r.desc);
+    const val=document.getElementById('nv-val');
+    if(val){ val.value=vmMoneyFmt(r.valor); }
+    set('nv-data', vmDateBR(r.data));
+    if(r.cat) set('nv-cat', r.cat);
+    if(r.pay) set('nv-pay', r.pay);
+    if(r.tipo==='resg') set('nv-tipo','resgate');
+    const h=document.getElementById('nv-hint');
+    if(h) h.innerHTML=`Entendi <b>"${esc(original)}"</b> assim. Confere e ajusta se precisar.`;
+  },80);
+}
+
+function chatAltura(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight, 96)+'px';
 }
 
 /* ---------- FAB — a folha de novo lançamento ----------
@@ -2367,6 +2600,21 @@ function loadDemo(){
 document.getElementById('btnBase').onclick=()=>{view=view==='base'?'month':'base';render();};
 document.getElementById('fab').onclick=()=> abrirNovo();
 
+/* Barra de escrita */
+(function ligarChat(){
+  const el=document.getElementById('chatIn'), go=document.getElementById('chatGo');
+  if(!el||!go) return;
+  const atualiza=()=>{ chatAltura(el); go.disabled = !el.value.trim(); };
+  el.addEventListener('input', atualiza);
+  /* Enter envia, Shift+Enter quebra linha — a convenção que todo mundo já tem
+     no dedo por causa do WhatsApp. No celular o teclado mostra "enviar". */
+  el.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); chatEnviar(); }
+  });
+  go.onclick=chatEnviar;
+  atualiza();
+})();
+
 /* ============================================================
    PADRÃO VIZIO · COMPORTAMENTO DE FOLHA (achados da auditoria)
    Vale para TODA folha do app — presente e futura. Em vez de lembrar de
@@ -2494,6 +2742,6 @@ render();
 <script src="auth.js?v=1.3"></script>
 
 <!-- Tour guiado. Depois do auth.js: um tour precisa saber se a pessoa é nova. -->
-<script src="tour.js?v=2.0"></script>
+<script src="tour.js?v=2.3"></script>
 </body>
 </html>

@@ -23,7 +23,7 @@ const TOUR = [
   {
     sel: null,
     titulo: 'Bem-vindo ao VIZIO Money',
-    txt: 'Cinco passos, um minuto — e no fim você vai saber o truque do cartão que dá até 40 dias de prazo de graça.',
+    txt: 'Seis passos, um minuto — e no fim você vai saber o truque do cartão que dá até 40 dias de prazo de graça.',
     cta: 'Bora'
   },
   {
@@ -33,9 +33,15 @@ const TOUR = [
     view: 'month'
   },
   {
+    sel: '#chatBar',
+    titulo: 'Só escrever',
+    txt: 'Escreva do jeito que você fala: <b>"gastei 50 no mercado ontem"</b>. O app entende o valor, a categoria, a data e a forma de pagamento sozinho.<br><br>Tudo é lido <b>aqui no seu aparelho</b> — o que você gasta não vai para servidor nenhum.',
+    view: 'month'
+  },
+  {
     sel: '#fab',
-    titulo: 'Tudo começa aqui',
-    txt: 'Um botão só. Gasto, entrada, dinheiro guardado ou compra parcelada — toque no <b>+</b>, diga o que foi, pronto. O app cuida do resto.',
+    titulo: 'Ou pelo formulário',
+    txt: 'Prefere conferir campo por campo? O <b>+</b> abre o formulário — e é por ele que entram as <b>compras parceladas</b>, que ele espalha sozinho pelos meses.',
     view: 'month'
   },
   {
