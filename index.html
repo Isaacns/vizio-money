@@ -312,13 +312,15 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 /* Seletor de mês: ‹ Julho › — 12 botões na tela era coisa de sistema.
    Toca no nome e escolhe; as setas resolvem 90% dos casos (mês vizinho). */
 .mes-sel{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 0 0}
-.mes-nav{width:40px;height:40px;border:none;background:transparent;color:var(--s500);
+/* 44px e não 40: são os controles mais tocados do app (trocar de mês é a ação
+   nº 1) e estavam abaixo do alvo mínimo. Achado da auditoria. */
+.mes-nav{width:44px;height:44px;border:none;background:transparent;color:var(--s500);
   font-size:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .mes-nav:hover{background:var(--s100);color:var(--warm)}
 .mes-nav:disabled{opacity:.25;cursor:default}
 .mes-nome{border:none;background:transparent;color:var(--warm);font-family:var(--font-display);
   font-weight:700;font-size:15px;letter-spacing:-.01em;padding:8px 12px;border-radius:10px;
-  cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px}
+  cursor:pointer;display:flex;align-items:center;gap:6px;min-height:44px}
 .mes-nome:hover{background:var(--s100)}
 .mes-nome .lk{font-size:10px}
 .mes-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
