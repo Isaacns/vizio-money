@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=2.0">
+<link rel="stylesheet" href="brand.css?v=2.1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -337,6 +337,64 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 .feed-vl.mais{color:var(--pos)} .feed-vl.menos{color:var(--neg)} .feed-vl.guarda{color:var(--brand-2)}
 .feed-vazio{text-align:center;padding:44px 20px;color:var(--s400);font-size:13.5px;line-height:1.7}
 
+/* ==========================================================================
+   DÍVIDAS — "quanto eu devo"
+   ========================================================================== */
+.dv-afoga{background:var(--neg-bg);border-left:2px solid var(--neg);border-radius:0;
+  padding:14px 16px;margin:6px 0 22px}
+.dv-afoga b{color:var(--neg);font-size:14px;display:block;margin-bottom:7px}
+.dv-afoga p{font-size:13px;color:var(--s600);line-height:1.65;margin:0 0 9px}
+.dv-afoga p:last-child{margin:0}
+.dv-afoga p b{display:inline;color:var(--warm);font-size:13px;margin:0}
+
+.dv-tabs{display:flex;gap:8px;margin-bottom:14px}
+.dv-tab{flex:1;border:1px solid var(--line2);background:transparent;border-radius:12px;
+  padding:12px 8px;cursor:pointer;font-family:inherit;color:var(--s500);min-height:56px}
+.dv-tab b{display:block;font-size:13.5px;color:var(--s600);font-weight:700;margin-bottom:2px}
+.dv-tab i{display:block;font-size:11px;font-style:normal;color:var(--s400)}
+.dv-tab.on{border-color:var(--brand);background:var(--brand-soft)}
+.dv-tab.on b{color:var(--warm)} .dv-tab.on i{color:var(--brand-2)}
+.dv-cmp{font-size:13px;color:var(--s500);line-height:1.7}
+.dv-cmp b{color:var(--warm);font-weight:600}
+
+.dv-lb{display:flex;justify-content:space-between;font-size:12.5px;color:var(--s500);
+  font-weight:600;margin-bottom:8px}
+.dv-lb b{color:var(--gold-2);font-variant-numeric:tabular-nums}
+.dv-range{width:100%;accent-color:var(--brand);margin-bottom:12px}
+.dv-ganho{font-size:13px;color:var(--s500);line-height:1.7}
+.dv-ganho b{color:var(--pos);font-weight:700}
+
+.dv-i{display:flex;align-items:center;gap:13px;padding:15px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.dv-i:last-of-type{border-bottom:none}
+.dv-ord{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--s100);
+  color:var(--s400);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.dv-ord.alvo{background:var(--grad-gold);color:#3A2C10;font-size:13px}
+.dv-tx{flex:1;min-width:0}
+.dv-tx b{display:block;font-size:14.5px;color:var(--ink);font-weight:600}
+.dv-tx > span{display:block;font-size:11.5px;color:var(--s400);margin-top:3px}
+.dv-flag{display:inline-block;font-style:normal;background:var(--neg-bg);color:var(--neg);
+  font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:5px}
+.dv-vl{flex:0 0 auto;text-align:right}
+.dv-vl b{display:block;font-size:15px;color:var(--neg);font-weight:700;font-variant-numeric:tabular-nums}
+.dv-vl span{display:block;font-size:10.5px;color:var(--s400);margin-top:3px}
+
+/* ==========================================================================
+   METAS — o que puxa
+   ========================================================================== */
+.mt-i{padding:16px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.mt-i:last-of-type{border-bottom:none}
+.mt-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+.mt-nome{font-size:14.5px;color:var(--ink);font-weight:600}
+.mt-ok{font-style:normal;font-size:10px;font-weight:700;color:var(--pos);background:var(--pos-bg);
+  padding:1px 7px;border-radius:99px;margin-left:5px}
+.mt-pct{font-size:13px;color:var(--gold-2);font-weight:800;font-variant-numeric:tabular-nums}
+.mt-barra{height:7px;border-radius:99px;background:var(--s100);overflow:hidden}
+.mt-barra i{display:block;height:100%;border-radius:99px;background:var(--grad-money);
+  transition:width .4s cubic-bezier(.2,.9,.3,1)}
+.mt-pe{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:12px;color:var(--s400)}
+.mt-pe b{color:var(--warm);font-weight:600}
+@media(max-width:420px){ .mt-pe{flex-direction:column;gap:3px} }
+
 /* Reflexão solo: fio dourado, sem caixa. Antes eram 4 cards empilhados —
    conselho demais vira barulho e a pessoa não lê nenhum. */
 .rfx-solo{border-left:2px solid var(--gold);padding:2px 0 2px 16px;margin:8px 0 6px}
@@ -547,8 +605,11 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
   <!-- VIEW: CARTÕES -->
   <div id="viewCartoes" class="hide"></div>
 
-  <!-- VIEW: METAS / ORÇAMENTO -->
+  <!-- VIEW: LIMITES DE GASTO -->
   <div id="viewOrcamento" class="hide"></div>
+
+  <!-- VIEW: DÍVIDAS — "quanto eu devo" -->
+  <div id="viewDividas" class="hide"></div>
 
   <!-- VIEW: BASE -->
   <div id="viewBase" class="hide"></div>
@@ -653,7 +714,7 @@ const KEY='vizio_money_v1';
 const uid=()=>Math.random().toString(36).slice(2,9);
 
 const DEFAULTS = {
-  version:2, plan:'free', year:2026, current:new Date().getMonth(),
+  version:3, plan:'free', year:2026, current:new Date().getMonth(),
   nome:'',
   /* Cartão: venc = dia que a fatura vence · melhor = melhor dia de compra
      (dia seguinte ao fechamento — comprar nele dá o prazo máximo). */
@@ -665,6 +726,13 @@ const DEFAULTS = {
   months:{}, /* m -> {opening:null, incomes:[], investments:[], expenses:[]} */
   purchases:[], /* parceladas globais: {id,cat,desc,card,value,parcelas,start} */
   hourlyWage:null, /* R$/hora p/ custo de oportunidade; null = estimado da renda */
+  /* "quanto eu ganho, quanto eu gasto e quanto eu DEVO" — o terceiro faltava.
+     {id,nome,saldo,juros(% a.m.),parcela(mínima mensal),criada} */
+  dividas:[],
+  /* Meta PUXA (faltam R$340 para o Natal); teto SEGURA (não passe de R$600).
+     São coisas diferentes e por isso não moram no mesmo lugar.
+     {id,nome,alvo,prazo:'YYYY-MM',guardado,criada} */
+  metas:[],
   updatedAt:0      /* carimbo do cliente — decide quem vence no sync (last-write-wins) */
 };
 
@@ -681,7 +749,13 @@ function migrate(r){
     const mm=r.months[k];
     if(Array.isArray(mm.investments)) mm.investments.forEach(i=>{ if(!i.tipo) i.tipo='aporte'; });
   }
-  r.version = 2;
+  /* v2 -> v3: nasceram dívidas e metas. O laço lá em cima já cria as duas
+     listas vazias para quem já usava; explícito aqui só para não depender de
+     efeito colateral — e porque quem lê este arquivo daqui a um ano merece
+     saber quando cada coisa entrou. */
+  if(!Array.isArray(r.dividas)) r.dividas=[];
+  if(!Array.isArray(r.metas))   r.metas=[];
+  r.version = 3;
   return r;
 }
 /* O localStorage virou CACHE. A fonte de verdade é a nuvem (vm_dados), senão
@@ -803,6 +877,96 @@ function clarityArc(ratio){
 }
 
 /* ============================================================
+   DÍVIDAS — motor de quitação
+   O documento chama isto de "opção principal", e com razão: é a diferença
+   entre vender controle (para quem já se controla) e vender saída (para quem
+   está afogado).
+
+   Duas estratégias, e o app mostra as DUAS porque elas resolvem problemas
+   diferentes:
+   · AVALANCHE  — mata primeiro o juro mais alto. É a ótima matematicamente:
+                  paga menos juros e termina antes.
+   · BOLA DE NEVE — mata primeiro o saldo menor. Perde dinheiro, mas entrega
+                  a primeira vitória mais cedo — e quem desiste no mês 3 não
+                  colhe a economia do mês 40. Motivação é variável do problema.
+
+   O efeito "bola de neve": quando uma dívida morre, a parcela dela NÃO volta
+   para o bolso — rola para a próxima. É isso que acelera tudo no fim.
+   ============================================================ */
+function simularQuitacao(lista, extra, estrategia){
+  const ds = (lista||[]).map(d=>({
+    id:d.id, nome:d.nome,
+    saldo:+d.saldo||0, juros:+d.juros||0, parcela:+d.parcela||0
+  })).filter(d=>d.saldo>0.01);
+  if(!ds.length) return { meses:0, juros:0, quitadas:[], impossivel:false, pago:0 };
+
+  /* A capacidade não encolhe quando uma dívida morre — a parcela dela rola
+     para a próxima. Esse é o motor da bola de neve. */
+  const capacidade = ds.reduce((s,d)=>s+d.parcela,0) + (+extra||0);
+  const quitadas=[]; let meses=0, jurosTotal=0, pago=0;
+  const MAX=600;   /* 50 anos: além disso é "nunca", e o app tem que dizer */
+
+  while(ds.some(d=>d.saldo>0.01) && meses<MAX){
+    meses++;
+    /* 1. juros do mês incidem antes do pagamento */
+    ds.forEach(d=>{ if(d.saldo>0.01){ const j=d.saldo*(d.juros/100); d.saldo+=j; jurosTotal+=j; } });
+
+    /* 2. paga o mínimo de cada uma (senão a dívida entra em atraso) */
+    let pote = capacidade;
+    ds.forEach(d=>{ if(d.saldo>0.01 && pote>0.01){
+      const p=Math.min(d.saldo, d.parcela, pote); d.saldo-=p; pote-=p; pago+=p; } });
+
+    /* 3. TODA a sobra vai para o alvo da estratégia */
+    let guarda=0;
+    while(pote>0.01 && guarda++<50){
+      const vivos = ds.filter(d=>d.saldo>0.01);
+      if(!vivos.length) break;
+      const alvo = estrategia==='avalanche'
+        ? vivos.reduce((a,b)=> b.juros>a.juros ? b : a)
+        : vivos.reduce((a,b)=> b.saldo<a.saldo ? b : a);
+      const p=Math.min(alvo.saldo, pote); alvo.saldo-=p; pote-=p; pago+=p;
+    }
+
+    ds.forEach(d=>{ if(d.saldo<=0.01 && !quitadas.some(q=>q.id===d.id))
+      quitadas.push({id:d.id, nome:d.nome, mes:meses}); });
+  }
+
+  /* O caso mais importante e o que ninguém mostra: quando a parcela não cobre
+     nem os juros, o saldo CRESCE. É o rotativo. Mentir aqui é o pior que o app
+     pode fazer com quem está afogado. */
+  return { meses, juros:jurosTotal, quitadas, pago, capacidade, impossivel: meses>=MAX };
+}
+
+const dividaTotal   = () => (S.dividas||[]).reduce((s,d)=>s+ (+d.saldo||0), 0);
+const dividaParcela = () => (S.dividas||[]).reduce((s,d)=>s+ (+d.parcela||0), 0);
+/* A dívida que está te sangrando mais em R$ por mês — não a maior. */
+function dividaPior(){
+  const l=(S.dividas||[]).filter(d=>+d.saldo>0);
+  if(!l.length) return null;
+  return l.reduce((a,b)=> (b.saldo*b.juros) > (a.saldo*a.juros) ? b : a);
+}
+/* Já cobre os juros? Se não, é rotativo: a dívida cresce mesmo pagando. */
+function dividaAfoga(d){ return (+d.parcela||0) <= (+d.saldo||0)*((+d.juros||0)/100); }
+
+/* ============================================================
+   METAS — o que puxa
+   ============================================================ */
+function metaCalc(g){
+  const alvo=+g.alvo||0, feito=+g.guardado||0;
+  const falta=Math.max(0, alvo-feito);
+  const pct = alvo>0 ? Math.min(100, Math.round(feito/alvo*100)) : 0;
+  let meses=null, porMes=null, atrasada=false;
+  if(g.prazo){
+    const [ay,am]=g.prazo.split('-').map(Number);
+    const hoje=new Date();
+    meses = (ay - hoje.getFullYear())*12 + (am - (hoje.getMonth()+1));
+    if(meses<=0){ atrasada = falta>0; meses=Math.max(0,meses); }
+    porMes = meses>0 ? falta/meses : falta;
+  }
+  return { alvo, feito, falta, pct, meses, porMes, atrasada, pronta: falta<=0.01 };
+}
+
+/* ============================================================
    IA DE REFLEXÃO — motor de regras (offline, sem backend)
    Custo de oportunidade · assinaturas · pague-se primeiro ·
    alertas · curto/médio/longo prazo. Pronto p/ plugar LLM depois.
@@ -817,6 +981,33 @@ function fvMonthly(monthly,years,rate){ const A=monthly*12; return A*((Math.pow(
 const pct = (a,b)=> b>0? Math.round((a/b)*100):0;
 function reflexoes(m){
   const out=[], hw=estHourly();
+
+  /* DÍVIDA VEM PRIMEIRO — e por matemática, não por moral.
+     Investir a 10% ao ano enquanto se paga 14% ao mês é perder dinheiro com
+     disciplina. Nenhum outro conselho importa antes deste. */
+  const pior = dividaPior();
+  if(pior){
+    const jm = (+pior.saldo)*((+pior.juros)/100);
+    if(dividaAfoga(pior)){
+      out.push({tag:'Dívida', target:'dividas',
+        t:`${pior.nome} está no rotativo`,
+        d:`A parcela de <b>${BRL(+pior.parcela)}</b> não cobre nem os <b>${BRL(jm)}</b> de juros do mês. O saldo cresce mesmo você pagando em dia. Isso não é indisciplina — é matemática, e tem saída.`,
+        cta:'Ver como sair'});
+    } else if(jm > 20){
+      out.push({tag:'Dívida', target:'dividas',
+        t:`${pior.nome} te custa ${BRL(jm)} por mês`,
+        d:`Só de juros, sem abater nada. São <b>${BRL(jm*12)} por ano</b> — ${hw?`<b>${(jm/hw).toFixed(1)} horas</b> do seu trabalho todo mês`:'dinheiro que evapora'}. Atacar essa primeiro rende mais que qualquer investimento.`,
+        cta:'Ver estratégia de quitação'});
+    }
+  }
+
+  /* Meta com prazo apertado: o empurrão vale mais que o elogio. */
+  const gs=(S.metas||[]).map(g=>({g,k:metaCalc(g)})).filter(x=>!x.k.pronta && x.k.meses!==null);
+  const urgente = gs.filter(x=>x.k.meses>0 && x.k.meses<=3).sort((a,b)=>a.k.meses-b.k.meses)[0];
+  if(urgente) out.push({tag:'Meta', target:'invest',
+    t:`Faltam ${urgente.k.meses} ${urgente.k.meses===1?'mês':'meses'} para ${urgente.g.nome}`,
+    d:`Você tem <b>${BRL(urgente.k.feito)}</b> de <b>${BRL(urgente.k.alvo)}</b>. Para chegar no prazo, são <b>${BRL(urgente.k.porMes)}</b> por mês.`,
+    cta:'Ver minhas metas'});
   const tot={}; for(const e of monthExpenseItems(m)) tot[e.cat]=(tot[e.cat]||0)+ +e.value;
   const top=Object.entries(tot).sort((a,b)=>b[1]-a[1])[0];
   if(top && top[1]>0){
@@ -913,19 +1104,26 @@ const IC = {
   home:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/></svg>',
   card:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>',
   target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>',
+  divida: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.6 7 7.5s2.2 2.6 5 3.2 5 1.5 5 3.4-2.2 3.4-5 3.4-5-1.1-5-3"/></svg>',
   seed:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8"/><path d="M12 13C12 8 8 5 4 5c0 5 4 8 8 8Z"/><path d="M12 13c0-4 3-7 7-7 0 4-3 7-7 7Z"/></svg>',
   chart:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>'
 };
 /* Uma camada de navegação, 5 itens — o mesmo número do Instagram.
    Ajustes saiu da barra: é configuração, não destino do dia a dia. Vive no ⚙️. */
+/* A barra segue a tese do documento: quanto eu GANHO e GASTO (Início),
+   quanto eu DEVO (Dívidas), e para onde estou indo (Guardar).
+   Limites de gasto saíram da barra: são configuração, e quando estouram o app
+   te avisa pelo badge e pela reflexão — você não precisa ir até lá conferir.
+   Essa é a lógica do WhatsApp: a informação vem até você. */
 const NAV = [
-  { id:'mes',       nome:'Início',  ic:IC.home,   on:()=>view==='month'    },
-  { id:'cartoes',   nome:'Cartões', ic:IC.card,   on:()=>view==='cartoes'  },
-  { id:'orcamento', nome:'Metas',   ic:IC.target, on:()=>view==='orcamento'},
-  { id:'invest',    nome:'Guardar', ic:IC.seed,   on:()=>view==='invest'   },
-  { id:'ano',       nome:'Ano',     ic:IC.chart,  on:()=>view==='year'     }
+  { id:'mes',     nome:'Início',  ic:IC.home,   on:()=>view==='month'   },
+  { id:'cartoes', nome:'Cartões', ic:IC.card,   on:()=>view==='cartoes' },
+  { id:'dividas', nome:'Dívidas', ic:IC.divida, on:()=>view==='dividas' },
+  { id:'invest',  nome:'Guardar', ic:IC.seed,   on:()=>view==='invest'  },
+  { id:'ano',     nome:'Ano',     ic:IC.chart,  on:()=>view==='year'    }
 ];
-const NAV_VIEW = { mes:'month', cartoes:'cartoes', orcamento:'orcamento', invest:'invest', ano:'year', base:'base' };
+const NAV_VIEW = { mes:'month', cartoes:'cartoes', dividas:'dividas', orcamento:'orcamento',
+                   invest:'invest', ano:'year', base:'base' };
 function irPara(id){
   view = NAV_VIEW[id] || 'month';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -946,6 +1144,7 @@ function render(){
   document.getElementById('viewConta').classList.toggle('hide', view!=='conta');
   document.getElementById('viewCartoes').classList.toggle('hide', view!=='cartoes');
   document.getElementById('viewOrcamento').classList.toggle('hide', view!=='orcamento');
+  document.getElementById('viewDividas').classList.toggle('hide', view!=='dividas');
   /* O FAB só aparece onde lançar faz sentido. Botão que não serve à tela em
      que está é ruído — e o usuário aprende a ignorá-lo. */
   document.getElementById('fab').classList.toggle('hide', !['month','invest'].includes(view));
@@ -955,6 +1154,7 @@ function render(){
   if(view==='base')      renderBase();
   if(view==='cartoes')   renderCartoes();
   if(view==='orcamento') renderOrcamento();
+  if(view==='dividas')   renderDividas();
   /* A conta mora no auth.js, que carrega DEPOIS deste script — o guard evita
      que o primeiro render() morra caso a view já venha como 'conta'. */
   if(view==='conta' && window.renderConta) window.renderConta();
@@ -1266,11 +1466,300 @@ function renderCartoes(){
   host.appendChild(panoramaCard());
 }
 
-/* ---------- METAS / ORÇAMENTO (aba própria) ---------- */
+/* ---------- METAS — o que puxa ----------
+   Vive dentro de Guardar porque é a mesma intenção: por que você está
+   juntando. Teto de gasto SEGURA; meta PUXA. Não podem morar no mesmo lugar
+   sem virar a mesma coisa na cabeça de quem usa. */
+function metasCard(){
+  const c=document.createElement('div'); c.className='card';
+  const gs=S.metas||[];
+  if(!gs.length){
+    c.innerHTML=`<h3>Metas</h3>
+      <div class="feed-vazio" style="padding:26px 10px">
+        Juntar sem motivo cansa. Dê um nome ao seu dinheiro —<br><b>"Natal", "reserva", "viagem"</b> — e eu te digo quanto por mês.
+        <div style="margin-top:16px"><button class="btn btn-ghost" id="mt-add0">Criar uma meta</button></div>
+      </div>`;
+    c.querySelector('#mt-add0').onclick=()=>abrirMeta();
+    return c;
+  }
+  c.innerHTML=`<h3>Metas <span class="sub">${gs.length}</span></h3>` +
+    gs.map(g=>{
+      const k=metaCalc(g);
+      return `<div class="mt-i" data-id="${g.id}">
+        <div class="mt-top">
+          <span class="mt-nome">${esc(g.nome)}${k.pronta?' <i class="mt-ok">conquistada</i>':''}</span>
+          <span class="mt-pct">${k.pct}%</span>
+        </div>
+        <div class="mt-barra"><i style="width:${k.pct}%"></i></div>
+        <div class="mt-pe">
+          <span>${BRL(k.feito)} de ${BRL(k.alvo)}</span>
+          <span>${k.pronta ? '🎉 chegou lá'
+            : k.atrasada ? `<span style="color:var(--neg)">prazo venceu · faltam ${BRL(k.falta)}</span>`
+            : k.porMes!=null ? `<b>${BRL(k.porMes)}/mês</b> por ${k.meses} ${k.meses===1?'mês':'meses'}`
+            : `faltam ${BRL(k.falta)}`}</span>
+        </div>
+      </div>`;
+    }).join('') +
+    `<button class="btn btn-ghost" id="mt-add" style="width:100%;margin-top:16px">Nova meta</button>`;
+  c.querySelector('#mt-add').onclick=()=>abrirMeta();
+  c.querySelectorAll('.mt-i').forEach(el=> el.onclick=()=>{
+    const g=S.metas.find(x=>x.id===el.dataset.id); if(g) abrirMeta(g);
+  });
+  return c;
+}
+
+function abrirMeta(g){
+  const r=document.getElementById('overlayRoot'), ed=!!g;
+  const hoje=new Date();
+  const prazoPad = `${hoje.getFullYear()}-12`;
+  r.innerHTML=`<div class="overlay"><div class="sheet">
+    <h2 style="margin-bottom:14px">${ed?'Editar meta':'Nova meta'}</h2>
+    <div class="vm-err" id="mt-err"></div>
+    <div class="vm-field"><label for="mt-nome">Para quê</label>
+      <input id="mt-nome" placeholder="Ex.: Natal, reserva, viagem" value="${ed?esc(g.nome):''}"></div>
+    <div class="vm-field"><label for="mt-alvo">Quanto você precisa</label>
+      <input id="mt-alvo" class="money num" inputmode="decimal" placeholder="0,00"
+        value="${ed?vmMoneyFmt(g.alvo):''}"></div>
+    <div class="vm-field"><label for="mt-guard">Quanto já tem</label>
+      <input id="mt-guard" class="money num" inputmode="decimal" placeholder="0,00"
+        value="${ed?vmMoneyFmt(g.guardado):''}"></div>
+    <div class="vm-field"><label for="mt-prazo">Até quando</label>
+      <input id="mt-prazo" type="month" value="${ed?(g.prazo||prazoPad):prazoPad}"></div>
+    <div class="budmeta" id="mt-calc" style="margin:-4px 0 12px"></div>
+    <button class="btn" id="mt-ok" style="width:100%">${ed?'Salvar':'Criar meta'}</button>
+    ${ed?`<button class="btn-perigo" id="mt-del" style="width:100%;margin-top:8px">Apagar esta meta</button>`:''}
+    <button class="linklike" id="mt-nao">Cancelar</button>
+  </div></div>`;
+  vmLigarMascaras(r);
+  const err=t=>{const e=document.getElementById('mt-err');e.textContent=t;e.style.display=t?'block':'none';};
+
+  /* Mostra o "quanto por mês" ENQUANTO digita: é o número que faz a meta
+     parecer possível — ou obviamente impossível, o que também é informação. */
+  const prever=()=>{
+    const k=metaCalc({ alvo:vmMoneyVal(document.getElementById('mt-alvo'))||0,
+      guardado:vmMoneyVal(document.getElementById('mt-guard'))||0,
+      prazo:document.getElementById('mt-prazo').value });
+    const el=document.getElementById('mt-calc');
+    if(!k.alvo){ el.textContent=''; return; }
+    if(k.pronta){ el.innerHTML='🎉 Você já tem o valor todo.'; return; }
+    el.innerHTML = k.meses>0
+      ? `Faltam <b>${BRL(k.falta)}</b> — dá <b>${BRL(k.porMes)} por mês</b> em ${k.meses} ${k.meses===1?'mês':'meses'}.`
+      : `Faltam <b>${BRL(k.falta)}</b> e o prazo é agora.`;
+  };
+  ['mt-alvo','mt-guard','mt-prazo'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',prever);
+    document.getElementById(id).addEventListener('change',prever);
+  });
+  prever();
+
+  document.getElementById('mt-nao').onclick=()=> r.innerHTML='';
+  document.getElementById('mt-del')?.addEventListener('click',()=>{
+    if(confirm(`Apagar a meta "${g.nome}"?`)){ S.metas=S.metas.filter(x=>x.id!==g.id); r.innerHTML=''; render(); toast('Meta apagada'); }
+  });
+  document.getElementById('mt-ok').onclick=()=>{
+    const nome=document.getElementById('mt-nome').value.trim();
+    const alvo=vmMoneyVal(document.getElementById('mt-alvo'));
+    const guardado=vmMoneyVal(document.getElementById('mt-guard'))||0;
+    const prazo=document.getElementById('mt-prazo').value;
+    if(!nome) return err('Para que é essa meta?');
+    if(!(alvo>0)) return err('Quanto você precisa juntar?');
+    if(guardado>alvo) return err('O que você já tem não pode ser maior que a meta.');
+    if(ed){ Object.assign(g,{nome,alvo,guardado,prazo}); }
+    else { S.metas.push({id:uid(),nome,alvo,guardado,prazo,criada:new Date().toISOString()}); }
+    r.innerHTML=''; view='invest'; render();
+    toast(ed?'Meta atualizada':'Meta criada 🎯');
+  };
+}
+
+/* ---------- LIMITES DE GASTO (via ⚙️ e via reflexão) ---------- */
 function renderOrcamento(){
   const m=activeMonth, host=document.getElementById('viewOrcamento');
   host.innerHTML='';
   host.appendChild(budgetCard(m));
+}
+
+/* ---------- DÍVIDAS — "como eu saio disso" ----------
+   O documento chama de "opção principal". É a única tela do app que não fala
+   de organizar: fala de sair. */
+let dvEstrategia = 'avalanche';   // avalanche | bola
+let dvExtra = 0;
+
+function renderDividas(){
+  const host=document.getElementById('viewDividas');
+  host.innerHTML='';
+  const lista=(S.dividas||[]).filter(d=>+d.saldo>0);
+
+  if(!lista.length){
+    const v=document.createElement('div'); v.className='card';
+    v.innerHTML=`<div class="feed-vazio">
+      <div style="font-size:34px;margin-bottom:10px">🎉</div>
+      <b style="color:var(--ink);font-size:16px;display:block;margin-bottom:6px">Você não deve nada</b>
+      Se tiver dívida, cadastre aqui e eu te mostro a ordem certa de pagar —<br>
+      e quanto isso economiza de juros.
+      <div style="margin-top:18px"><button class="btn" id="dv-add1">Cadastrar uma dívida</button></div>
+    </div>`;
+    host.appendChild(v);
+    v.querySelector('#dv-add1').onclick=()=>abrirDivida();
+    return;
+  }
+
+  const av=simularQuitacao(lista, dvExtra, 'avalanche');
+  const bn=simularQuitacao(lista, dvExtra, 'bola');
+  const r = dvEstrategia==='avalanche' ? av : bn;
+  const total=dividaTotal();
+
+  /* HERÓI: o total devido e QUANDO acaba — o número que a pessoa quer. */
+  const her=document.createElement('div'); her.className='heroi';
+  her.innerHTML=`
+    <div class="heroi-lb">Você deve</div>
+    <div class="heroi-n neg">${BRL(total)}</div>
+    <div class="heroi-ctx">${
+      r.impossivel
+        ? `Pagando <b>${BRL(r.capacidade)}</b> por mês, essa dívida <b>não acaba</b> — os juros crescem mais rápido que o pagamento.`
+        : `Pagando <b>${BRL(r.capacidade)}</b> por mês, você fica livre em <b>${r.meses} ${r.meses===1?'mês':'meses'}</b>${mesLivre(r.meses)}.`
+    }</div>`;
+  host.appendChild(her);
+
+  /* O alerta que ninguém dá: quando a parcela não cobre nem os juros. */
+  if(r.impossivel){
+    const al=document.createElement('div'); al.className='dv-afoga';
+    const afogando=lista.filter(dividaAfoga);
+    al.innerHTML=`<b>⚠️ Isso é o rotativo</b>
+      <p>${afogando.length? `Em <b>${afogando.map(d=>esc(d.nome)).join('</b>, <b>')}</b>, a parcela não cobre nem os juros do mês.
+          O saldo cresce mesmo você pagando em dia.` : `O pagamento atual não vence os juros.`}</p>
+      <p>Não é falta de disciplina: é matemática. As saídas reais são <b>aumentar o pagamento</b>,
+      <b>negociar o juro</b> com o credor, ou <b>trocar por uma dívida mais barata</b>
+      (portabilidade, consignado). Use o controle abaixo para ver quanto por mês faz a conta virar.</p>`;
+    host.appendChild(al);
+  }
+
+  /* ESTRATÉGIA — as duas, com o trade-off medido */
+  const est=document.createElement('div'); est.className='card';
+  const dif = bn.juros - av.juros;
+  const priAv = av.quitadas[0], priBn = bn.quitadas[0];
+  est.innerHTML=`<h3>Por qual começar</h3>
+    <div class="dv-tabs">
+      <button class="dv-tab${dvEstrategia==='avalanche'?' on':''}" data-e="avalanche">
+        <b>Avalanche</b><i>paga menos juros</i></button>
+      <button class="dv-tab${dvEstrategia==='bola'?' on':''}" data-e="bola">
+        <b>Bola de neve</b><i>vitória mais cedo</i></button>
+    </div>
+    <div class="dv-cmp">
+      ${dif>1 ? `A <b>avalanche</b> economiza <b>${BRL(dif)}</b> em juros.
+                 A <b>bola de neve</b> quita a primeira dívida no <b>mês ${priBn.mes}</b>
+                 (${esc(priBn.nome)}) contra o mês ${priAv.mes} da avalanche.<br><br>
+                 <span style="color:var(--s400)">A avalanche é a ótima no papel. Mas quem desiste no mês 3
+                 não colhe a economia do mês ${av.meses}. Escolha a que você vai conseguir seguir.</span>`
+              : `Nas suas dívidas as duas dão quase no mesmo — siga a que te motivar mais.`}
+    </div>`;
+  host.appendChild(est);
+  est.querySelectorAll('.dv-tab').forEach(b=> b.onclick=()=>{ dvEstrategia=b.dataset.e; render(); });
+
+  /* QUANTO A MAIS POR MÊS — o controle que mostra o poder do esforço extra */
+  const ex=document.createElement('div'); ex.className='card';
+  const semExtra=simularQuitacao(lista,0,dvEstrategia);
+  ex.innerHTML=`<h3>E se eu pagar um pouco a mais?</h3>
+    <div class="dv-lb"><span>A mais por mês</span><b id="dv-ex-lb">${BRL(dvExtra)}</b></div>
+    <input type="range" id="dv-extra" class="dv-range" min="0" max="1000" step="25" value="${Math.min(1000,dvExtra)}">
+    <div class="dv-ganho" id="dv-ganho"></div>`;
+  host.appendChild(ex);
+
+  const pintarGanho=()=>{
+    const g=document.getElementById('dv-ganho');
+    const cur=simularQuitacao(lista, dvExtra, dvEstrategia);
+    if(cur.impossivel){ g.innerHTML=`<span style="color:var(--neg)">Ainda não vence os juros. Arraste mais.</span>`; return; }
+    const mesesGanhos = semExtra.impossivel ? null : semExtra.meses - cur.meses;
+    const jurosGanhos = semExtra.impossivel ? null : semExtra.juros - cur.juros;
+    g.innerHTML = dvExtra<=0
+      ? `Sem nada a mais: <b>${cur.meses} meses</b> e <b>${BRL(cur.juros)}</b> de juros.`
+      : `Livre em <b>${cur.meses} meses</b>${mesesGanhos>0?` — <b>${mesesGanhos} ${mesesGanhos===1?'mês':'meses'} antes</b>`:''}.
+         ${jurosGanhos>1?`Economiza <b>${BRL(jurosGanhos)}</b> de juros.`:''}`;
+  };
+  pintarGanho();
+  const sl=document.getElementById('dv-extra');
+  sl.oninput=e=>{ dvExtra=+e.target.value;
+    document.getElementById('dv-ex-lb').textContent=BRL(dvExtra); pintarGanho(); };
+
+  /* A LISTA — na ordem da estratégia escolhida */
+  const ord=[...lista].sort((a,b)=> dvEstrategia==='avalanche'
+    ? (+b.juros)-(+a.juros) : (+a.saldo)-(+b.saldo));
+  const lc=document.createElement('div'); lc.className='card';
+  lc.innerHTML=`<h3>Suas dívidas <span class="sub">${BRL(dividaParcela())}/mês em parcelas</span></h3>` +
+    ord.map((d,i)=>{
+      const q=r.quitadas.find(x=>x.id===d.id);
+      const afoga=dividaAfoga(d);
+      return `<div class="dv-i" data-id="${d.id}">
+        <span class="dv-ord${i===0?' alvo':''}">${i===0?'★':i+1}</span>
+        <span class="dv-tx">
+          <b>${esc(d.nome)}</b>
+          <span>${(+d.juros).toLocaleString('pt-BR')}% ao mês · parcela ${BRL(+d.parcela)}
+            ${afoga?'<i class="dv-flag">não cobre os juros</i>':''}</span>
+        </span>
+        <span class="dv-vl">
+          <b>${BRL(+d.saldo)}</b>
+          <span>${q?`quita no mês ${q.mes}`:'—'}</span>
+        </span>
+      </div>`;
+    }).join('') +
+    `<div class="budmeta" style="margin-top:14px">★ é por onde começar jogando todo o dinheiro extra.
+     Nas outras, pague só a parcela mínima.</div>
+     <button class="btn btn-ghost" id="dv-add" style="width:100%;margin-top:14px">Adicionar dívida</button>`;
+  host.appendChild(lc);
+
+  lc.querySelector('#dv-add').onclick=()=>abrirDivida();
+  lc.querySelectorAll('.dv-i').forEach(el=> el.onclick=()=>{
+    const d=S.dividas.find(x=>x.id===el.dataset.id); if(d) abrirDivida(d);
+  });
+}
+
+/* "livre em 14 meses" não diz nada; "livre em setembro de 2027" diz tudo. */
+function mesLivre(meses){
+  if(!meses) return '';
+  const d=new Date(); d.setMonth(d.getMonth()+meses);
+  return ` — em <b>${MONTHS[d.getMonth()].toLowerCase()} de ${d.getFullYear()}</b>`;
+}
+
+function abrirDivida(d){
+  const r=document.getElementById('overlayRoot'), ed=!!d;
+  r.innerHTML=`<div class="overlay"><div class="sheet">
+    <h2 style="margin-bottom:14px">${ed?'Editar dívida':'Nova dívida'}</h2>
+    <div class="vm-err" id="dv-err"></div>
+    <div class="vm-field"><label for="dv-nome">O que é</label>
+      <input id="dv-nome" placeholder="Ex.: Cartão Nubank" value="${ed?esc(d.nome):''}"></div>
+    <div class="vm-field"><label for="dv-saldo">Quanto falta pagar</label>
+      <input id="dv-saldo" class="money num" inputmode="decimal" placeholder="0,00"
+        value="${ed?vmMoneyFmt(d.saldo):''}"></div>
+    <div class="vm-field"><label for="dv-juros">Juros por mês (%)</label>
+      <input id="dv-juros" type="number" inputmode="decimal" step="0.01" min="0" max="50"
+        placeholder="Ex.: 14" value="${ed?d.juros:''}">
+      <span class="budmeta">Está na fatura ou no contrato. Não sabe? Rotativo do cartão gira perto de 14%; empréstimo pessoal, 3% a 8%.</span></div>
+    <div class="vm-field"><label for="dv-parc">Parcela mínima por mês</label>
+      <input id="dv-parc" class="money num" inputmode="decimal" placeholder="0,00"
+        value="${ed?vmMoneyFmt(d.parcela):''}"></div>
+    <button class="btn" id="dv-ok" style="width:100%">${ed?'Salvar':'Adicionar'}</button>
+    ${ed?`<button class="btn-perigo" id="dv-del" style="width:100%;margin-top:8px">Apagar esta dívida</button>`:''}
+    <button class="linklike" id="dv-nao">Cancelar</button>
+  </div></div>`;
+  vmLigarMascaras(r);
+  const err=t=>{const e=document.getElementById('dv-err');e.textContent=t;e.style.display=t?'block':'none';};
+  document.getElementById('dv-nao').onclick=()=> r.innerHTML='';
+  document.getElementById('dv-del')?.addEventListener('click',()=>{
+    if(confirm(`Apagar "${d.nome}"?`)){ S.dividas=S.dividas.filter(x=>x.id!==d.id); r.innerHTML=''; render(); toast('Apagada'); }
+  });
+  document.getElementById('dv-ok').onclick=()=>{
+    const nome=document.getElementById('dv-nome').value.trim();
+    const saldo=vmMoneyVal(document.getElementById('dv-saldo'));
+    const juros=parseFloat(document.getElementById('dv-juros').value)||0;
+    const parcela=vmMoneyVal(document.getElementById('dv-parc'));
+    if(!nome) return err('Dê um nome à dívida.');
+    if(!(saldo>0)) return err('Quanto ainda falta pagar?');
+    if(!(parcela>0)) return err('Qual a parcela mínima por mês?');
+    if(juros<0||juros>50) return err('Juros por mês entre 0% e 50%.');
+    if(ed){ Object.assign(d,{nome,saldo,juros,parcela}); }
+    else { S.dividas.push({id:uid(),nome,saldo,juros,parcela,criada:new Date().toISOString()}); }
+    r.innerHTML=''; view='dividas'; render();
+    toast(ed?'Dívida atualizada':'Dívida cadastrada');
+  };
 }
 /* Sinal no menu: leva o olho para o que precisa de atenção.
    Ao dividir o app em abas, a pessoa ganha organização mas PERDE a visão
@@ -1580,6 +2069,10 @@ function renderInvest(){
   let apo=0, res=0;
   for(let m=0;m<12;m++){ apo+=investAportes(m); res+=investResgates(m); }
   const bal=apo-res;
+
+  /* Metas primeiro: o PORQUÊ vem antes do quanto. Número de patrimônio sem
+     motivo não segura ninguém no terceiro mês. */
+  host.appendChild(metasCard());
 
   const kpi=document.createElement('div'); kpi.className='kpi';
   kpi.innerHTML=`
