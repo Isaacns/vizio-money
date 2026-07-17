@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="brand.css?v=2.1">
+<link rel="stylesheet" href="brand.css?v=2.2">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 /* Rede de segurança: nada empurra a página para o lado. `clip` e não `hidden`
@@ -98,7 +98,10 @@ input,select{font-family:inherit;font-size:16px}
 .kpi .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--sh-sm)}
 .kpi .lab{font-size:11px;font-weight:600;color:var(--s500);display:flex;align-items:center;gap:6px}
 .kpi .val{font-family:var(--font-display);font-weight:800;font-size:24px;margin-top:6px;letter-spacing:-.02em}
-.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .brandc{color:var(--brand)}
+/* .brandc usa --brand-2 e não --brand: #1C64F0 como TEXTO dá 3,94:1 e reprova.
+   REGRA: --brand é cor de PREENCHIMENTO (botão, barra, anel). Como texto sobre
+   fundo escuro, sempre --brand-2. */
+.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .brandc{color:var(--brand-2)}
 .dot{width:8px;height:8px;border-radius:3px}
 
 /* Tables */
@@ -109,7 +112,10 @@ tr:last-child td{border-bottom:none}
 .rowdel{color:var(--s400);border:none;background:none;font-size:15px;padding:2px 6px;border-radius:6px}
 .rowdel:hover{color:var(--neg);background:var(--neg-bg)}
 .tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:var(--r-full);background:var(--s100);color:var(--s600)}
-.tag.credit{background:var(--brand-soft);color:var(--brand-deep)}
+/* Era --brand-deep (#1450C8): azul ESCURO sobre fundo quase preto, ~1,7:1.
+   Sobra do tema claro que sobreviveu à virada para o dark. É a tag "crédito"
+   — a informação que diz se o gasto vira fatura. Agora --brand-2 (7,54:1). */
+.tag.credit{background:var(--brand-soft);color:var(--brand-2)}
 .empty{color:var(--s400);font-size:13px;padding:14px 4px;text-align:center}
 
 /* Forms */
@@ -630,7 +636,9 @@ tfoot td{border-top:1px solid var(--line2);padding-top:9px}
 <nav class="bottomnav" id="bottomNav"></nav>
 
 <div id="overlayRoot"></div>
-<div class="toast" id="toast"></div>
+<!-- role=status + aria-live: o toast é a ÚNICA confirmação de que o lançamento
+     entrou. Sem isso, quem usa leitor de tela age às cegas. -->
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 /* ============================================================
@@ -1416,23 +1424,30 @@ function feedCard(m){
     if(dia!==diaAtual){ diaAtual=dia; html+=`<div class="feed-dia">${dia}</div>`; }
     const cls = x.t==='in'?'mais' : (x.t==='ap'||x.t==='resg')?'guarda' : 'menos';
     const sinal = x.t==='in'?'+' : (x.t==='ap'?'' : x.t==='resg'?'+' : '−');
-    html+=`<div class="feed-i" data-t="${x.t}" data-i="${x.i??''}">
-      <span class="feed-ic">${FEED_IC[x.t]}</span>
+    /* <button> e não <div>: div com onclick não recebe foco, não responde a
+       Enter/Espaço e o leitor de tela não anuncia como acionável. */
+    const acionavel = x.t!=='parc';
+    html+=`<${acionavel?'button type="button"':'div'} class="feed-i" data-t="${x.t}" data-i="${x.i??''}"
+      ${acionavel?`aria-label="Apagar ${esc(x.nome||'lançamento')}, ${BRL(x.v)}"`:''}>
+      <span class="feed-ic" aria-hidden="true">${FEED_IC[x.t]}</span>
       <span class="feed-tx"><b>${esc(x.nome||'—')}</b><span>${esc(x.sub)}</span></span>
       <span class="feed-vl ${cls}">${sinal}${BRL(x.v).replace('R$ ','')}</span>
-    </div>`;
+    </${acionavel?'button':'div'}>`;
   });
   c.innerHTML = `<h3>${MONTHS[m]} <span class="sub">${itens.length} lançamento${itens.length>1?'s':''}</span></h3>${html}`;
 
-  /* Toque na linha = apagar, com confirmação. Parcela não se apaga por aqui:
-     ela é gerada pela compra, e apagar a sombra sem o objeto confunde. */
+  /* Apagar direto + DESFAZER, em vez de confirm().
+     Parcela não se apaga por aqui: ela é a sombra de uma compra, e apagar a
+     sombra sem o objeto confunde — some e volta no próximo render. */
   c.querySelectorAll('.feed-i').forEach(el=>{
     const t=el.dataset.t, i=+el.dataset.i;
     if(t==='parc'){ el.style.cursor='default'; return; }
     el.onclick=()=>{
       const arr = t==='in' ? month(m).incomes : t==='out' ? month(m).expenses : month(m).investments;
       const nome = el.querySelector('b').textContent;
-      if(confirm(`Apagar "${nome}"?`)){ arr.splice(i,1); render(); toast('Apagado'); }
+      const copia = structuredClone(arr[i]);          /* guarda antes de sumir */
+      arr.splice(i,1); render();
+      toastDesfazer(`"${nome}" apagado`, ()=> arr.splice(i,0,copia));
     };
   });
   return c;
@@ -1485,7 +1500,8 @@ function metasCard(){
   c.innerHTML=`<h3>Metas <span class="sub">${gs.length}</span></h3>` +
     gs.map(g=>{
       const k=metaCalc(g);
-      return `<div class="mt-i" data-id="${g.id}">
+      return `<button type="button" class="mt-i" data-id="${g.id}"
+          aria-label="Editar meta ${esc(g.nome)}, ${k.pct}% concluída">
         <div class="mt-top">
           <span class="mt-nome">${esc(g.nome)}${k.pronta?' <i class="mt-ok">conquistada</i>':''}</span>
           <span class="mt-pct">${k.pct}%</span>
@@ -1498,7 +1514,7 @@ function metasCard(){
             : k.porMes!=null ? `<b>${BRL(k.porMes)}/mês</b> por ${k.meses} ${k.meses===1?'mês':'meses'}`
             : `faltam ${BRL(k.falta)}`}</span>
         </div>
-      </div>`;
+      </button>`;
     }).join('') +
     `<button class="btn btn-ghost" id="mt-add" style="width:100%;margin-top:16px">Nova meta</button>`;
   c.querySelector('#mt-add').onclick=()=>abrirMeta();
@@ -1554,7 +1570,9 @@ function abrirMeta(g){
 
   document.getElementById('mt-nao').onclick=()=> r.innerHTML='';
   document.getElementById('mt-del')?.addEventListener('click',()=>{
-    if(confirm(`Apagar a meta "${g.nome}"?`)){ S.metas=S.metas.filter(x=>x.id!==g.id); r.innerHTML=''; render(); toast('Meta apagada'); }
+    const copia=structuredClone(g), pos=S.metas.findIndex(x=>x.id===g.id);
+    S.metas=S.metas.filter(x=>x.id!==g.id); r.innerHTML=''; render();
+    toastDesfazer(`Meta "${copia.nome}" apagada`, ()=> S.metas.splice(pos,0,copia));
   });
   document.getElementById('mt-ok').onclick=()=>{
     const nome=document.getElementById('mt-nome').value.trim();
@@ -1688,8 +1706,9 @@ function renderDividas(){
     ord.map((d,i)=>{
       const q=r.quitadas.find(x=>x.id===d.id);
       const afoga=dividaAfoga(d);
-      return `<div class="dv-i" data-id="${d.id}">
-        <span class="dv-ord${i===0?' alvo':''}">${i===0?'★':i+1}</span>
+      return `<button type="button" class="dv-i" data-id="${d.id}"
+          aria-label="Editar ${esc(d.nome)}, saldo ${BRL(+d.saldo)}">
+        <span class="dv-ord${i===0?' alvo':''}" aria-hidden="true">${i===0?'★':i+1}</span>
         <span class="dv-tx">
           <b>${esc(d.nome)}</b>
           <span>${(+d.juros).toLocaleString('pt-BR')}% ao mês · parcela ${BRL(+d.parcela)}
@@ -1699,7 +1718,7 @@ function renderDividas(){
           <b>${BRL(+d.saldo)}</b>
           <span>${q?`quita no mês ${q.mes}`:'—'}</span>
         </span>
-      </div>`;
+      </button>`;
     }).join('') +
     `<div class="budmeta" style="margin-top:14px">★ é por onde começar jogando todo o dinheiro extra.
      Nas outras, pague só a parcela mínima.</div>
@@ -1744,7 +1763,9 @@ function abrirDivida(d){
   const err=t=>{const e=document.getElementById('dv-err');e.textContent=t;e.style.display=t?'block':'none';};
   document.getElementById('dv-nao').onclick=()=> r.innerHTML='';
   document.getElementById('dv-del')?.addEventListener('click',()=>{
-    if(confirm(`Apagar "${d.nome}"?`)){ S.dividas=S.dividas.filter(x=>x.id!==d.id); r.innerHTML=''; render(); toast('Apagada'); }
+    const copia=structuredClone(d), pos=S.dividas.findIndex(x=>x.id===d.id);
+    S.dividas=S.dividas.filter(x=>x.id!==d.id); r.innerHTML=''; render();
+    toastDesfazer(`"${copia.nome}" apagada`, ()=> S.dividas.splice(pos,0,copia));
   });
   document.getElementById('dv-ok').onclick=()=>{
     const nome=document.getElementById('dv-nome').value.trim();
@@ -2208,7 +2229,7 @@ function renderBase(){
   dc.querySelector('#d-imp').onclick=()=>dc.querySelector('#d-file').click();
   dc.querySelector('#d-file').onchange=importData;
   dc.querySelector('#d-demo').onclick=loadDemo;
-  dc.querySelector('#d-reset').onclick=()=>{if(confirm('Apagar todos os dados?')){S=structuredClone(DEFAULTS);S.current=new Date().getMonth();activeMonth=S.current;render();}};
+  dc.querySelector('#d-reset').onclick=zerarTudo;
   host.appendChild(dc);
 }
 
@@ -2238,8 +2259,74 @@ function paywall(reason){
 }
 
 /* ---------- HELPERS ---------- */
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+/* ============================================================
+   TOAST — agora anunciado e com DESFAZER
+   Achado da auditoria: o toast confirmava tudo ("Lançado", "Apagado") mas
+   não tinha aria-live — quem usa leitor de tela agia às cegas.
+   ============================================================ */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900);
+}
 function celebrate(msg){toast(msg);}
+
+/* "Zerar tudo" tinha DOIS problemas, não um.
+   1. UX: um confirm() nativo para apagar a vida financeira inteira. Clicar
+      "OK" é reflexo — não é decisão. Aqui exige DIGITAR, e oferece o backup
+      antes, porque a pergunta certa não é "tem certeza?" e sim "você já tem
+      cópia?".
+   2. BUG: fazia `S = structuredClone(DEFAULTS)`, REATRIBUINDO S. O motor de
+      sync no auth.js segura a referência de S e muta no lugar — depois de
+      zerar, ele continuaria empurrando o objeto ANTIGO para a nuvem. Ou seja:
+      zerava na tela e não zerava no servidor. Agora muta no lugar. */
+function zerarTudo(){
+  const r=document.getElementById('overlayRoot');
+  r.innerHTML=`<div class="overlay"><div class="sheet">
+    <h2>Zerar tudo</h2>
+    <p class="budmeta" style="margin:8px 0 12px">Apaga <b>todos</b> os lançamentos, cartões, dívidas e metas
+    deste ano. <b>Não tem como desfazer.</b></p>
+    <p class="budmeta" style="margin-bottom:10px">Antes, que tal
+      <button class="linklike" id="zt-exp" style="padding:0;display:inline">baixar seu backup</button>?</p>
+    <div class="vm-field"><label for="zt-txt">Digite <b>ZERAR</b> para confirmar</label>
+      <input id="zt-txt" placeholder="ZERAR" autocomplete="off"></div>
+    <button class="btn-perigo" id="zt-ok" style="width:100%;opacity:.5" disabled>Zerar tudo</button>
+    <button class="linklike" id="zt-nao">Cancelar</button>
+  </div></div>`;
+  const txt=document.getElementById('zt-txt'), ok=document.getElementById('zt-ok');
+  setTimeout(()=>txt.focus(),50);
+  txt.oninput=()=>{ const v=txt.value.trim().toUpperCase()==='ZERAR';
+    ok.disabled=!v; ok.style.opacity=v?'1':'.5'; };
+  document.getElementById('zt-exp').onclick=exportData;
+  document.getElementById('zt-nao').onclick=()=> r.innerHTML='';
+  ok.onclick=()=>{
+    const novo=structuredClone(DEFAULTS); novo.current=new Date().getMonth();
+    Object.keys(S).forEach(k=>delete S[k]); Object.assign(S,novo);  /* muta, não reatribui */
+    activeMonth=S.current; view='month'; r.innerHTML=''; render();
+    toast('Tudo zerado');
+  };
+}
+
+/* DESFAZER no lugar de confirm().
+   Por que a troca: confirmação vira reflexo. Em duas semanas a pessoa clica
+   "sim" sem ler, e ela deixa de proteger — só cobra pedágio em toda ação
+   legítima. Desfazer inverte: a ação acontece na hora (rápido para quem quer)
+   e continua reversível por alguns segundos (seguro para quem errou).
+   `refazer` recebe uma função que devolve o estado ao ponto anterior. */
+function toastDesfazer(msg, refazer, ms=6000){
+  const t=document.getElementById('toast');
+  clearTimeout(t._t);
+  t.innerHTML='';
+  const tx=document.createElement('span'); tx.textContent=msg;
+  const bt=document.createElement('button'); bt.type='button'; bt.textContent='Desfazer';
+  const box=document.createElement('span'); box.className='toast-undo';
+  box.append(tx,bt); t.appendChild(box);
+  t.classList.add('show');
+
+  const fim=()=>{ t.classList.remove('show'); clearTimeout(t._t); };
+  bt.onclick=()=>{ try{ refazer(); }catch(e){} fim(); render(); toast('Desfeito'); };
+  t._t=setTimeout(fim, ms);
+}
 const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmtDate(d){if(!d)return'—';const p=String(d).split('-');return p.length===3?`${p[2]}/${p[1]}`:d;}
 function today(m){const y=S.year;return `${y}-${String(m+1).padStart(2,'0')}-01`;}
@@ -2277,6 +2364,56 @@ function loadDemo(){
 /* topbar buttons */
 document.getElementById('btnBase').onclick=()=>{view=view==='base'?'month':'base';render();};
 document.getElementById('fab').onclick=()=> abrirNovo();
+
+/* ============================================================
+   PADRÃO VIZIO · COMPORTAMENTO DE FOLHA (achados da auditoria)
+   Vale para TODA folha do app — presente e futura. Em vez de lembrar de
+   fazer isso em cada `overlayRoot.innerHTML=`, um observador cuida de todas.
+   ============================================================ */
+(function folhaPadrao(){
+  const raiz = document.getElementById('overlayRoot');
+  if(!raiz) return;
+
+  const aberta = () => !!raiz.querySelector('.overlay');
+  const fechar = () => {
+    /* respeita o botão de fechar de cada folha (algumas têm limpeza própria) */
+    const x = raiz.querySelector('#vm-close, #novo-fecha, #mes-fecha, #nv-nao, #dv-nao, #mt-nao, #cropNao, #ap-nao, #zt-nao');
+    if(x) x.click(); else raiz.innerHTML='';
+  };
+
+  /* 1. Esc fecha. Todo modal do mundo fecha com Esc; o usuário tenta. */
+  addEventListener('keydown', e=>{
+    if(e.key==='Escape' && aberta()) fechar();
+    /* 2. Foco preso dentro da folha: sem isso o Tab passeia pelo app atrás da
+       folha, e o leitor de tela lê a tela errada. */
+    if(e.key==='Tab' && aberta()){
+      const f=[...raiz.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])')]
+        .filter(el=>el.offsetParent!==null);
+      if(!f.length) return;
+      const pri=f[0], ult=f[f.length-1];
+      if(e.shiftKey && document.activeElement===pri){ e.preventDefault(); ult.focus(); }
+      else if(!e.shiftKey && document.activeElement===ult){ e.preventDefault(); pri.focus(); }
+    }
+  });
+
+  /* 3. Trava a rolagem do fundo + devolve o foco a quem abriu.
+     Um observador em vez de N chamadas: folha nova nasce já obedecendo. */
+  let quemAbriu = null;
+  new MutationObserver(()=>{
+    const on = aberta();
+    document.body.classList.toggle('vm-travado', on);
+    if(on){
+      if(!quemAbriu) quemAbriu = document.activeElement;
+      /* leva o foco para dentro: sem isso o teclado continua lá atrás */
+      const alvo = raiz.querySelector('input:not([type=hidden]), button, [tabindex]');
+      if(alvo && !raiz.contains(document.activeElement)) setTimeout(()=>alvo.focus({preventScroll:true}),60);
+    } else if(quemAbriu){
+      /* devolve o foco ao botão que abriu — senão o teclado volta para o topo */
+      try{ quemAbriu.focus({preventScroll:true}); }catch(e){}
+      quemAbriu = null;
+    }
+  }).observe(raiz, { childList:true, subtree:false });
+})();
 /* O btnMenu é ligado pelo auth.js (abre a tela de conta). Aqui havia um
    handler de TESTE — "Voltar para o plano Free? (teste)" — que sobrou de uma
    depuração. Ficava vivo na janela entre este script e o auth.js carregar.

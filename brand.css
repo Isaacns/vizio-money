@@ -30,9 +30,22 @@
 
   /* ---- Tinta & neutros ---- */
   --warm:#E8EEF8; --mineral:#8A94A6; --metal:#B0B0B0;
-  --ink:#E8EEF8; --s700:#D6DEEC; --s600:#A9B3C4; --s500:#8A94A6; --s400:#6A7387;
+  /* ---- Escala de tinta · TODA medida contra o pior fundo (--surface) ----
+     --s400 era #6A7387 = 3,87:1 sobre card. Reprovava no WCAG AA (4,5:1) e era
+     justamente o tom dos metadados: categoria, forma de pagamento, "quita no
+     mês 8". Informação real em texto que some. Clareado só até passar (4,52:1)
+     — o mínimo necessário, para o cinza continuar cinza e a hierarquia viva. */
+  --ink:#E8EEF8; --s700:#D6DEEC; --s600:#A9B3C4; --s500:#8A94A6; --s400:#767E91;
   --s300:#1C2740; --s200:#161E31; --s100:#131A2B;
-  --line:#1C2740; --line2:#2A3550;
+
+  /* ---- Linhas: duas, com papéis diferentes ----
+     --line é DECORATIVA (divisória de lista). Fica em 1,35:1 de propósito:
+     a WCAG 1.4.11 cobre o que é necessário para IDENTIFICAR um componente, e
+     um fio entre duas linhas não identifica nada — o texto já separa. Forçar
+     3:1 aqui encheria a tela das caixas que acabamos de tirar.
+     --line-input é o contorno de CONTROLE: sem ele o usuário não enxerga onde
+     digitar. Esse é obrigatório e passa (3,07:1). */
+  --line:#1C2740; --line2:#2A3550; --line-input:#5B6378;
   --white:#E8EEF8;
 
   /* ---- Semáforo financeiro ---- */
@@ -245,6 +258,62 @@
 .vm-ptr.girando .vm-ptr-ic{animation:vmSpin .8s linear infinite}
 .vm-ptr.girando{transition:transform .2s ease, opacity .18s ease}
 @media (prefers-reduced-motion: reduce){ .vm-ptr.girando .vm-ptr-ic{animation:none} }
+
+/* ==========================================================================
+   PADRÃO VIZIO · ACESSIBILIDADE  (auditoria de 17/07/2026)
+   Medido, não achado. Cada regra aqui corrige um achado com número.
+   ========================================================================== */
+
+/* 1. FOCO VISÍVEL (WCAG 2.4.7). Anel em TUDO que recebe foco, inclusive o que
+   nasce de JS. :focus-visible e não :focus — quem clica com o mouse não vê
+   anel, quem navega por teclado vê. */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--brand-2);
+  outline-offset:2px;
+  border-radius:6px;
+}
+/* fundo escuro precisa do halo, senão o anel some sobre azul */
+.btn:focus-visible,.fab:focus-visible{ outline-color:var(--warm); }
+
+/* 2. CONTORNO DE CAMPO (WCAG 1.4.11). Estava em 1,51:1 — o usuário não via
+   onde digitar. Agora 3,07:1. Vale para TODO controle de entrada. */
+input:not([type=range]):not([type=checkbox]):not([type=radio]),
+select, textarea, .vm-field input, .addrow input, .addrow select{
+  border-color:var(--line-input) !important;
+}
+input:focus, select:focus, textarea:focus{ border-color:var(--brand-2) !important; }
+
+/* 3. LINHA DE LISTA CLICÁVEL = <button>, não <div>.
+   Div com onclick não recebe foco, não responde a Enter/Espaço e o leitor de
+   tela não anuncia como acionável. Estas classes viraram button no HTML —
+   aqui só desfazemos a aparência de botão. */
+.feed-i,.dv-i,.mt-i{
+  appearance:none;-webkit-appearance:none;
+  background:transparent;border:none;border-radius:0;
+  font-family:inherit;color:inherit;text-align:left;width:100%;
+  cursor:pointer;
+}
+.feed-i:hover,.dv-i:hover,.mt-i:hover{ background:rgba(255,255,255,.03) }
+
+/* 4. TOAST COM DESFAZER — substitui o confirm() nativo.
+   Confirmação vira reflexo: em duas semanas a pessoa clica "sim" sem ler, e
+   ela não protege mais ninguém. Desfazer protege de verdade, e não cobra um
+   pedágio em toda ação legítima. */
+.toast-undo{display:flex;align-items:center;gap:14px}
+.toast-undo button{
+  background:transparent;border:none;color:var(--brand-2);font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;padding:8px 4px;min-height:44px;
+  text-transform:uppercase;letter-spacing:.06em;flex:0 0 auto;
+}
+.toast-undo button:hover{ color:var(--warm) }
+
+/* 5. Enquanto a folha está aberta, o fundo NÃO rola.
+   No celular a rolagem "vaza" para trás e o usuário perde o lugar. */
+body.vm-travado{ overflow:hidden; touch-action:none }
+
+/* 6. Só para leitor de tela — texto que existe sem ocupar pixel. */
+.sr-so{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* Links legais: presentes e acessíveis, sem competir com a ação principal. */
 .lk-legal{color:var(--s500);text-decoration:underline;text-underline-offset:2px}
