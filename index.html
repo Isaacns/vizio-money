@@ -764,7 +764,7 @@ const KEY='vizio_money_v1';
 const uid=()=>Math.random().toString(36).slice(2,9);
 
 const DEFAULTS = {
-  version:3, plan:'free', year:2026, current:new Date().getMonth(),
+  version:4, plan:'free', year:2026, current:new Date().getMonth(),
   nome:'',
   /* Cartão: venc = dia que a fatura vence · melhor = melhor dia de compra
      (dia seguinte ao fechamento — comprar nele dá o prazo máximo). */
@@ -774,7 +774,9 @@ const DEFAULTS = {
   payments:['Pix','Débito'], /* + cartões (crédito) são adicionados dinamicamente */
   budgets:{Moradia:100,Apartamento:3000,Assinaturas:100,'Saúde':200,'Alimentação':600,Lazer:100,Uber:50,Beleza:100,Roupas:100,Presentes:100,Essencial:300,'Contas de Casa':250,'Educação':100,Lanches:80,Imprevistos:150,Outros:50},
   months:{}, /* m -> {opening:null, incomes:[], investments:[], expenses:[]} */
-  purchases:[], /* parceladas globais: {id,cat,desc,card,value,parcelas,start} */
+  purchases:[], /* parceladas globais: {id,cat,desc,card,value,parcelas,start,data}
+                   start = mês de USO/competência (0-11) = mesDaFatura − 1.
+                   O débito sai do caixa em start+1 (o vencimento) — ver faturaCard. */
   hourlyWage:null, /* R$/hora p/ custo de oportunidade; null = estimado da renda */
   /* "quanto eu ganho, quanto eu gasto e quanto eu DEVO" — o terceiro faltava.
      {id,nome,saldo,juros(% a.m.),parcela(mínima mensal),criada} */
@@ -805,7 +807,29 @@ function migrate(r){
      saber quando cada coisa entrou. */
   if(!Array.isArray(r.dividas)) r.dividas=[];
   if(!Array.isArray(r.metas))   r.metas=[];
-  r.version = 3;
+  /* v3 -> v4: off-by-one do parcelamento (auditoria 23/07, achado M1).
+     `start` era gravado como o mês de VENCIMENTO (mesDaFatura), mas o engine
+     o lê como mês de USO/competência — toda parcela saía do caixa um mês
+     depois do que a própria dica "1ª parcela em X" prometia. Recalculamos o
+     start de cada compra a partir da data e do cartão (competência =
+     vencimento − 1), com a MESMA regra de mesDaFatura, reescrita aqui porque
+     neste ponto S ainda não existe (load roda antes de S nascer).
+     Recompute determinístico e IDEMPOTENTE: rodar de novo não muda nada —
+     essencial porque um cliente com o app antigo regrava version:3 no sync
+     (last-write-wins) e força esta migração a rodar outra vez. */
+  if(+(r.version||0) < 4 && Array.isArray(r.purchases)){
+    for(const p of r.purchases){
+      if(!p || !p.data) continue;                 // sem data não há como recalcular
+      const d = new Date(p.data+'T12:00:00');
+      if(isNaN(d)) continue;
+      const c = (r.cards||[]).find(x=>x && x.nome===p.card);
+      const melhor = +((c && c.melhor) || 1);
+      let mf = d.getMonth() + 1;                  // vencimento (regra de mesDaFatura)
+      if(melhor > 1 && d.getDate() >= melhor) mf += 1;
+      p.start = Math.max(0, Math.min(11, mf - 1));
+    }
+  }
+  r.version = 4;
   return r;
 }
 /* O localStorage virou CACHE. A fonte de verdade é a nuvem (vm_dados), senão
@@ -826,7 +850,9 @@ const isCredit    = pay => cardNames().includes(pay);
    Regra real do cartão: a melhor data é o dia seguinte ao fechamento.
      compra ANTES da melhor data  -> entra na fatura que fecha já, vence mês+1
      compra A PARTIR da melhor data -> pega o ciclo seguinte, vence mês+2
-   É exatamente por isso que comprar na melhor data dá o prazo máximo. */
+   É exatamente por isso que comprar na melhor data dá o prazo máximo.
+   ATENÇÃO: devolve o mês de VENCIMENTO. Quem grava `start` (competência/uso)
+   precisa subtrair 1 — gravar sem o −1 foi o off-by-one M1 (23/07). */
 function mesDaFatura(dataISO, cardNome){
   const d = new Date((dataISO||today(S.current))+'T12:00:00');
   if(isNaN(d)) return S.current+1;
@@ -1574,7 +1600,9 @@ function abrirNovo(tipo){
       const n=parseInt(document.getElementById('nv-n').value);
       if(!(n>0)) return err('Quantas parcelas?');
       const card=document.getElementById('nv-card').value;
-      const start=Math.min(11, mesDaFatura(data,card));
+      /* mesDaFatura = VENCIMENTO; start = competência (vencimento − 1).
+         Gravar sem o −1 fazia a parcela sair um mês tarde (fix M1, 23/07). */
+      const start=Math.max(0, Math.min(11, mesDaFatura(data,card)-1));
       S.purchases.push({id:uid(),desc,cat:document.getElementById('nv-cat').value,
         card,value:val,parcelas:n,start,data});
     }
@@ -2099,7 +2127,7 @@ function parceladasCard(m){
     const n=m-p.start+1, on = n>=1&&n<=p.parcelas;
     return `<tr style="${on?'':'opacity:.45'}"><td>${esc(p.desc)}<div class="budmeta">${esc(p.cat)} · ${esc(p.card)}</div></td>
       <td class="num">${BRL(+p.value)}</td>
-      <td>${on?`<span class="tag">${n}/${p.parcelas}</span>`:`<span class="budmeta">${n<1?'inicia '+MABBR[p.start]:'quitada'}</span>`}</td>
+      <td>${on?`<span class="tag">${n}/${p.parcelas}</span>`:`<span class="budmeta">${n<1?'inicia '+MABBR[Math.min(11,p.start+1)]:'quitada'}</span>`}</td>
       <td><button class="rowdel" data-id="${p.id}">✕</button></td></tr>`;
   }).join('');
   c.innerHTML=`<h3>💳 Compras parceladas <span class="sub num">${BRL(active.reduce((s,x)=>s+x.value,0))} neste mês</span></h3>
@@ -2137,9 +2165,10 @@ function parceladasCard(m){
     const de=c.querySelector('#p-desc').value.trim(),cat=c.querySelector('#p-cat').value,card=c.querySelector('#p-card').value,
       data=vmDateISO(c.querySelector('#p-data')), v=vmMoneyVal(c.querySelector('#p-val')),n=parseInt(c.querySelector('#p-n').value);
     if(!de||!(v>0)||!(n>0))return toast('Preencha descrição, valor da parcela e nº de parcelas');
-    const start=Math.min(11, mesDaFatura(data, card));   /* automático pela melhor data */
+    /* automático pela melhor data; competência = vencimento − 1 (fix M1, 23/07) */
+    const start=Math.max(0, Math.min(11, mesDaFatura(data, card)-1));
     S.purchases.push({id:uid(),desc:de,cat,card,value:v,parcelas:n,start,data:data||today(m)});
-    toast(`${n}x a partir de ${MABBR[start]} ✨`); render();
+    toast(`${n}x a partir de ${MABBR[Math.min(11,start+1)]} ✨`); render();
   };
   return c;
 }
@@ -2589,10 +2618,10 @@ function loadDemo(){
   jun.expenses=[{date:'2026-06-18',desc:'Mercado',cat:'Alimentação',pay:'C6',value:243.10},
                 {date:'2026-06-22',desc:'Farmácia',cat:'Saúde',pay:'Nu',value:96.40}];
   S.purchases=[
-    {id:uid(),desc:'Celular pai',cat:'Presentes',card:'MP',value:89.87,parcelas:24,start:6,data:'2026-06-25'},
-    {id:uid(),desc:'Televisão',cat:'Outros',card:'MP',value:229.80,parcelas:10,start:6,data:'2026-06-14'},
-    {id:uid(),desc:'Perfume Versace',cat:'Beleza',card:'C6',value:112.37,parcelas:8,start:6,data:'2026-06-10'},
-    {id:uid(),desc:'Conj. Academia',cat:'Roupas',card:'MP',value:179.29,parcelas:2,start:6,data:'2026-06-28'}];
+    {id:uid(),desc:'Celular pai',cat:'Presentes',card:'MP',value:89.87,parcelas:24,start:5,data:'2026-06-25'},
+    {id:uid(),desc:'Televisão',cat:'Outros',card:'MP',value:229.80,parcelas:10,start:5,data:'2026-06-14'},
+    {id:uid(),desc:'Perfume Versace',cat:'Beleza',card:'C6',value:112.37,parcelas:8,start:5,data:'2026-06-10'},
+    {id:uid(),desc:'Conj. Academia',cat:'Roupas',card:'MP',value:179.29,parcelas:2,start:5,data:'2026-06-28'}];
   activeMonth=6; view='month'; toast('Exemplo de Julho carregado ✨'); render();
 }
 
